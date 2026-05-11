@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "Build-A-Job Trader",
+    "slug": "build-a-job-trader",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0F"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.buildajob.trader",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to capture portfolio and job progress photos.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photos to upload portfolio and job images."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#0A0A0F"
+      },
+      "package": "com.buildajob.trader",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      // "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to upload portfolio and job images."
+        }
+      ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "apiBaseUrl": "http://10.0.2.2:4000",
+      "eas": {
+        "projectId": "d2f96bc6-77c2-43ae-9ae1-b2e89a2d5399"
+      }
+    },
+    "scheme": "buildajob-trader"
+  }
+}

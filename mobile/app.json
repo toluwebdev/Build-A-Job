@@ -1,0 +1,84 @@
+{
+  "expo": {
+    "name": "Build-A-Job",
+    "slug": "build-a-job",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png", // <--- Add this!
+    "splash": {
+      "image": "./assets/splash-icon.png", // <--- Add this!
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0F"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.buildajob.app",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to take photos of your job.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photos to upload job images.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to find nearby tradespeople.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to find nearby tradespeople.",
+        "NSMicrophoneUsageDescription": "This app uses the microphone for voice messages."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-icon-foreground.png", // <--- Add this!
+        "backgroundColor": "#0A0A0F"
+      },
+      "package": "com.buildajob.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take photos of your job."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to upload job images."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to find nearby tradespeople."
+        }
+      ],
+      "expo-build-properties"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "apiBaseUrl": "http://10.0.2.2:4000",
+      "eas": {
+        "projectId": "eb576b27-a5ba-4889-94ce-61391cff6775"
+      }
+    },
+    "scheme": "buildajob"
+  }
+}

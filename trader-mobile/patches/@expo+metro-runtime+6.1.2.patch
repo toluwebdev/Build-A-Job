@@ -1,0 +1,4002 @@
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/Data/LogBoxLog.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/Data/LogBoxLog.d.ts
+deleted file mode 100644
+index 11ec160..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/Data/LogBoxLog.d.ts
++++ /dev/null
+@@ -1,68 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import type { Stack } from './LogBoxSymbolication';
+-import type { Category, Message, ComponentStack, CodeFrame } from './parseLogBoxLog';
+-type SymbolicationStatus = 'NONE' | 'PENDING' | 'COMPLETE' | 'FAILED';
+-export type LogLevel = 'warn' | 'error' | 'fatal' | 'syntax' | 'static';
+-export type LogBoxLogData = {
+-    level: LogLevel;
+-    type?: string;
+-    message: Message;
+-    stack: Stack;
+-    category: string;
+-    componentStack: ComponentStack;
+-    codeFrame?: CodeFrame;
+-    isComponentError: boolean;
+-};
+-export type StackType = 'stack' | 'component';
+-type SymbolicationResult = {
+-    error: null;
+-    stack: null;
+-    status: 'NONE';
+-} | {
+-    error: null;
+-    stack: null;
+-    status: 'PENDING';
+-} | {
+-    error: null;
+-    stack: Stack;
+-    status: 'COMPLETE';
+-} | {
+-    error: Error;
+-    stack: null;
+-    status: 'FAILED';
+-};
+-export declare class LogBoxLog {
+-    message: Message;
+-    type: string;
+-    category: Category;
+-    componentStack: ComponentStack;
+-    stack: Stack;
+-    count: number;
+-    level: LogLevel;
+-    codeFrame?: CodeFrame;
+-    isComponentError: boolean;
+-    symbolicated: Record<StackType, SymbolicationResult>;
+-    private callbacks;
+-    constructor(data: LogBoxLogData & {
+-        symbolicated?: Record<StackType, SymbolicationResult>;
+-    });
+-    incrementCount(): void;
+-    getAvailableStack(type: StackType): Stack | null;
+-    private flushCallbacks;
+-    private pushCallback;
+-    retrySymbolicate(type: StackType, callback?: (status: SymbolicationStatus) => void): void;
+-    symbolicate(type: StackType, callback?: (status: SymbolicationStatus) => void): void;
+-    private _symbolicate;
+-    private componentStackCache;
+-    private getStack;
+-    private handleSymbolicate;
+-    private updateStatus;
+-}
+-export {};
+-//# sourceMappingURL=LogBoxLog.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/Data/LogBoxSymbolication.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/Data/LogBoxSymbolication.d.ts
+deleted file mode 100644
+index e4c888d..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/Data/LogBoxSymbolication.d.ts
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import { StackFrame as UpstreamStackFrame } from 'stacktrace-parser';
+-type SymbolicatedStackTrace = any;
+-type StackFrame = UpstreamStackFrame & {
+-    collapse?: boolean;
+-};
+-export type Stack = StackFrame[];
+-export declare function deleteStack(stack: Stack): void;
+-export declare function symbolicate(stack: Stack): Promise<SymbolicatedStackTrace>;
+-export {};
+-//# sourceMappingURL=LogBoxSymbolication.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/Data/LogContext.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/Data/LogContext.d.ts
+deleted file mode 100644
+index a065403..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/Data/LogContext.d.ts
++++ /dev/null
+@@ -1,14 +0,0 @@
+-import React from 'react';
+-import { LogBoxLog } from './LogBoxLog';
+-export declare const LogContext: React.Context<{
+-    selectedLogIndex: number;
+-    isDisabled: boolean;
+-    logs: LogBoxLog[];
+-} | null>;
+-export declare function useLogs(): {
+-    selectedLogIndex: number;
+-    isDisabled: boolean;
+-    logs: LogBoxLog[];
+-};
+-export declare function useSelectedLog(): LogBoxLog;
+-//# sourceMappingURL=LogContext.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/Data/parseLogBoxLog.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/Data/parseLogBoxLog.d.ts
+deleted file mode 100644
+index 11d2203..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/Data/parseLogBoxLog.d.ts
++++ /dev/null
+@@ -1,45 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import type { LogBoxLogData } from './LogBoxLog';
+-type ExceptionData = any;
+-export type ExtendedExceptionData = ExceptionData & {
+-    isComponentError: boolean;
+-    [key: string]: any;
+-};
+-export type Category = string;
+-export type CodeFrame = {
+-    content: string;
+-    location?: {
+-        row: number;
+-        column: number;
+-        [key: string]: any;
+-    } | null;
+-    fileName: string;
+-    collapse?: boolean;
+-};
+-export type Message = {
+-    content: string;
+-    substitutions: {
+-        length: number;
+-        offset: number;
+-    }[];
+-};
+-export type ComponentStack = CodeFrame[];
+-export declare function parseInterpolation(args: readonly any[]): {
+-    category: Category;
+-    message: Message;
+-};
+-export declare function parseComponentStack(message: string): ComponentStack;
+-export declare function parseLogBoxException(error: ExtendedExceptionData): LogBoxLogData;
+-export declare function parseLogBoxLog(args: readonly any[]): {
+-    componentStack: ComponentStack;
+-    category: Category;
+-    message: Message;
+-};
+-export {};
+-//# sourceMappingURL=parseLogBoxLog.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/UI/LogBoxMessage.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/UI/LogBoxMessage.d.ts
+deleted file mode 100644
+index 7c50252..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/UI/LogBoxMessage.d.ts
++++ /dev/null
+@@ -1,19 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import { StyleProp, TextStyle } from 'react-native';
+-import type { Message } from '../Data/parseLogBoxLog';
+-type Props = {
+-    message: Message;
+-    style: StyleProp<TextStyle>;
+-    plaintext?: boolean;
+-    maxLength?: number;
+-};
+-export declare function LogBoxMessage(props: Props): React.ReactElement;
+-export {};
+-//# sourceMappingURL=LogBoxMessage.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/UI/LogBoxStyle.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/UI/LogBoxStyle.d.ts
+deleted file mode 100644
+index e68d08c..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/UI/LogBoxStyle.d.ts
++++ /dev/null
+@@ -1,22 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-export declare function getBackgroundColor(opacity?: number): string;
+-export declare function getBackgroundLightColor(opacity?: number): string;
+-export declare function getBackgroundDarkColor(opacity?: number): string;
+-export declare function getWarningColor(opacity?: number): string;
+-export declare function getWarningDarkColor(opacity?: number): string;
+-export declare function getFatalColor(opacity?: number): string;
+-export declare function getFatalDarkColor(opacity?: number): string;
+-export declare function getErrorColor(opacity?: number): string;
+-export declare function getErrorDarkColor(opacity?: number): string;
+-export declare function getLogColor(opacity?: number): string;
+-export declare function getWarningHighlightColor(opacity?: number): string;
+-export declare function getDividerColor(opacity?: number): string;
+-export declare function getHighlightColor(opacity?: number): string;
+-export declare function getTextColor(opacity?: number): string;
+-//# sourceMappingURL=LogBoxStyle.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/modules/parseErrorStack/parseHermesStack.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/modules/parseErrorStack/parseHermesStack.d.ts
+deleted file mode 100644
+index 391b989..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/modules/parseErrorStack/parseHermesStack.d.ts
++++ /dev/null
+@@ -1,3 +0,0 @@
+-import parseErrorStack from 'react-native/Libraries/Core/Devtools/parseErrorStack';
+-export { parseErrorStack };
+-//# sourceMappingURL=parseHermesStack.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorCodeFrame.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorCodeFrame.d.ts
+deleted file mode 100644
+index 9dc61d3..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorCodeFrame.d.ts
++++ /dev/null
+@@ -1,13 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import type { CodeFrame } from '../Data/parseLogBoxLog';
+-export declare function LogBoxInspectorCodeFrame({ codeFrame }: {
+-    codeFrame?: CodeFrame;
+-}): React.JSX.Element | null;
+-//# sourceMappingURL=LogBoxInspectorCodeFrame.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorFooter.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorFooter.d.ts
+deleted file mode 100644
+index 424b68a..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorFooter.d.ts
++++ /dev/null
+@@ -1,15 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-type Props = {
+-    onDismiss: () => void;
+-    onMinimize: () => void;
+-};
+-export declare function LogBoxInspectorFooter(props: Props): React.JSX.Element;
+-export {};
+-//# sourceMappingURL=LogBoxInspectorFooter.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorHeader.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorHeader.d.ts
+deleted file mode 100644
+index 6de88be..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorHeader.d.ts
++++ /dev/null
+@@ -1,16 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import type { LogLevel } from '../Data/LogBoxLog';
+-type Props = {
+-    onSelectIndex: (selectedIndex: number) => void;
+-    level: LogLevel;
+-};
+-export declare function LogBoxInspectorHeader(props: Props): React.JSX.Element;
+-export {};
+-//# sourceMappingURL=LogBoxInspectorHeader.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorMessageHeader.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorMessageHeader.d.ts
+deleted file mode 100644
+index 9a27d83..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorMessageHeader.d.ts
++++ /dev/null
+@@ -1,20 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import type { LogLevel } from '../Data/LogBoxLog';
+-import type { Message } from '../Data/parseLogBoxLog';
+-type Props = {
+-    collapsed: boolean;
+-    message: Message;
+-    level: LogLevel;
+-    title: string;
+-    onPress: () => void;
+-};
+-export declare function LogBoxInspectorMessageHeader(props: Props): React.JSX.Element;
+-export {};
+-//# sourceMappingURL=LogBoxInspectorMessageHeader.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorSection.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorSection.d.ts
+deleted file mode 100644
+index 3294a50..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorSection.d.ts
++++ /dev/null
+@@ -1,16 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-type Props = {
+-    heading: string;
+-    children: React.ReactNode;
+-    action?: any;
+-};
+-export declare function LogBoxInspectorSection(props: Props): React.JSX.Element;
+-export {};
+-//# sourceMappingURL=LogBoxInspectorSection.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorSourceMapStatus.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorSourceMapStatus.d.ts
+deleted file mode 100644
+index 6e77787..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorSourceMapStatus.d.ts
++++ /dev/null
+@@ -1,16 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import type { GestureResponderEvent } from 'react-native';
+-type Props = {
+-    onPress?: ((event: GestureResponderEvent) => void) | null;
+-    status: 'COMPLETE' | 'FAILED' | 'NONE' | 'PENDING';
+-};
+-export declare function LogBoxInspectorSourceMapStatus(props: Props): React.JSX.Element | null;
+-export {};
+-//# sourceMappingURL=LogBoxInspectorSourceMapStatus.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorStackFrame.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorStackFrame.d.ts
+deleted file mode 100644
+index 48d91c7..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorStackFrame.d.ts
++++ /dev/null
+@@ -1,19 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import type { GestureResponderEvent } from 'react-native';
+-import { StackFrame } from 'stacktrace-parser';
+-type Props = {
+-    frame: StackFrame & {
+-        collapse?: boolean;
+-    };
+-    onPress?: (event: GestureResponderEvent) => void;
+-};
+-export declare function LogBoxInspectorStackFrame(props: Props): React.JSX.Element;
+-export {};
+-//# sourceMappingURL=LogBoxInspectorStackFrame.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorStackFrames.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorStackFrames.d.ts
+deleted file mode 100644
+index c996d4a..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/overlay/LogBoxInspectorStackFrames.d.ts
++++ /dev/null
+@@ -1,18 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import type { StackType } from '../Data/LogBoxLog';
+-import type { Stack } from '../Data/LogBoxSymbolication';
+-type Props = {
+-    type: StackType;
+-    onRetry: () => void;
+-};
+-export declare function getCollapseMessage(stackFrames: Stack, collapsed: boolean): string;
+-export declare function LogBoxInspectorStackFrames({ onRetry, type }: Props): React.JSX.Element | null;
+-export {};
+-//# sourceMappingURL=LogBoxInspectorStackFrames.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/error-overlay/useRejectionHandler.d.ts b/node_modules/@expo/metro-runtime/build/error-overlay/useRejectionHandler.d.ts
+deleted file mode 100644
+index 2d6666d..0000000
+--- a/node_modules/@expo/metro-runtime/build/error-overlay/useRejectionHandler.d.ts
++++ /dev/null
+@@ -1,3 +0,0 @@
+-import React from 'react';
+-export declare function useRejectionHandler(): React.RefObject<boolean>;
+-//# sourceMappingURL=useRejectionHandler.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/metroServerLogs.d.ts b/node_modules/@expo/metro-runtime/build/metroServerLogs.d.ts
+deleted file mode 100644
+index 89e34e0..0000000
+--- a/node_modules/@expo/metro-runtime/build/metroServerLogs.d.ts
++++ /dev/null
+@@ -1,2 +0,0 @@
+-export declare function captureStackForServerLogs(): void;
+-//# sourceMappingURL=metroServerLogs.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/metroServerLogs.native.d.ts b/node_modules/@expo/metro-runtime/build/metroServerLogs.native.d.ts
+deleted file mode 100644
+index a3347e0..0000000
+--- a/node_modules/@expo/metro-runtime/build/metroServerLogs.native.d.ts
++++ /dev/null
+@@ -1,2 +0,0 @@
+-export declare function captureStackForServerLogs(): void;
+-//# sourceMappingURL=metroServerLogs.native.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/promiseRejectionTracking.d.ts b/node_modules/@expo/metro-runtime/build/promiseRejectionTracking.d.ts
+deleted file mode 100644
+index b67ad84..0000000
+--- a/node_modules/@expo/metro-runtime/build/promiseRejectionTracking.d.ts
++++ /dev/null
+@@ -1,2 +0,0 @@
+-export declare function enablePromiseRejectionTracking(): void;
+-//# sourceMappingURL=promiseRejectionTracking.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/promiseRejectionTracking.native.d.ts b/node_modules/@expo/metro-runtime/build/promiseRejectionTracking.native.d.ts
+deleted file mode 100644
+index 710514d..0000000
+--- a/node_modules/@expo/metro-runtime/build/promiseRejectionTracking.native.d.ts
++++ /dev/null
+@@ -1,2 +0,0 @@
+-export declare function enablePromiseRejectionTracking(): void;
+-//# sourceMappingURL=promiseRejectionTracking.native.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/build/symbolicate.d.ts b/node_modules/@expo/metro-runtime/build/symbolicate.d.ts
+deleted file mode 100644
+index 4f11f34..0000000
+--- a/node_modules/@expo/metro-runtime/build/symbolicate.d.ts
++++ /dev/null
+@@ -1,5 +0,0 @@
+-import { LogBoxLog } from './error-overlay/Data/LogBoxLog';
+-import parseErrorStack from './error-overlay/modules/parseErrorStack';
+-export { LogBoxLog, parseErrorStack };
+-export { getStackFormattedLocation } from './error-overlay/formatProjectFilePath';
+-//# sourceMappingURL=symbolicate.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogBoxData.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogBoxData.tsx
+deleted file mode 100644
+index e987baa..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogBoxData.tsx
++++ /dev/null
+@@ -1,457 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-'use client';
+-
+-import * as React from 'react';
+-import { NativeEventEmitter } from 'react-native';
+-
+-import { LogBoxLog } from './LogBoxLog';
+-import type { LogLevel, StackType } from './LogBoxLog';
+-import { LogContext } from './LogContext';
+-import { parseLogBoxException } from './parseLogBoxLog';
+-import type { Message, Category, ComponentStack, ExtendedExceptionData } from './parseLogBoxLog';
+-import NativeLogBox from '../modules/NativeLogBox';
+-import parseErrorStack from '../modules/parseErrorStack';
+-
+-export type LogBoxLogs = Set<LogBoxLog>;
+-
+-export type LogData = {
+-  level: LogLevel;
+-  message: Message;
+-  category: Category;
+-  componentStack: ComponentStack;
+-};
+-
+-type ExtendedError = any;
+-
+-export type Observer = (options: {
+-  logs: LogBoxLogs;
+-  isDisabled: boolean;
+-  selectedLogIndex: number;
+-}) => void;
+-
+-export type IgnorePattern = string | RegExp;
+-
+-export type Subscription = {
+-  unsubscribe: () => void;
+-};
+-
+-export type WarningInfo = {
+-  finalFormat: string;
+-  forceDialogImmediately: boolean;
+-  suppressDialog_LEGACY: boolean;
+-  suppressCompletely: boolean;
+-  monitorEvent: string | null;
+-  monitorListVersion: number;
+-  monitorSampleRate: number;
+-};
+-
+-export type WarningFilter = (format: string) => WarningInfo;
+-
+-type Props = object;
+-
+-type State = {
+-  logs: LogBoxLogs;
+-  isDisabled: boolean;
+-  hasError: boolean;
+-  selectedLogIndex: number;
+-};
+-
+-const observers: Set<{ observer: Observer } & any> = new Set();
+-const ignorePatterns: Set<IgnorePattern> = new Set();
+-let logs: LogBoxLogs = new Set();
+-let updateTimeout: null | ReturnType<typeof setTimeout> = null;
+-let _isDisabled = false;
+-let _selectedIndex = -1;
+-
+-const LOGBOX_ERROR_MESSAGE =
+-  'An error was thrown when attempting to render log messages via LogBox.';
+-
+-function getNextState() {
+-  return {
+-    logs,
+-    isDisabled: _isDisabled,
+-    selectedLogIndex: _selectedIndex,
+-  };
+-}
+-
+-export function reportLogBoxError(error: ExtendedError, componentStack?: string): void {
+-  const ExceptionsManager = require('../modules/ExceptionsManager').default;
+-
+-  if (componentStack != null) {
+-    error.componentStack = componentStack;
+-  }
+-  ExceptionsManager.handleException(error);
+-}
+-
+-export function reportUnexpectedLogBoxError(error: ExtendedError, componentStack?: string): void {
+-  error.message = `${LOGBOX_ERROR_MESSAGE}\n\n${error.message}`;
+-  return reportLogBoxError(error, componentStack);
+-}
+-
+-export function isLogBoxErrorMessage(message: string): boolean {
+-  return typeof message === 'string' && message.includes(LOGBOX_ERROR_MESSAGE);
+-}
+-
+-export function isMessageIgnored(message: string): boolean {
+-  for (const pattern of ignorePatterns) {
+-    if (
+-      (pattern instanceof RegExp && pattern.test(message)) ||
+-      (typeof pattern === 'string' && message.includes(pattern))
+-    ) {
+-      return true;
+-    }
+-  }
+-  return false;
+-}
+-
+-function handleUpdate(): void {
+-  if (updateTimeout == null) {
+-    updateTimeout = setTimeout(() => {
+-      updateTimeout = null;
+-      const nextState = getNextState();
+-      observers.forEach(({ observer }) => observer(nextState));
+-    }, 0);
+-  }
+-}
+-
+-function appendNewLog(newLog: LogBoxLog): void {
+-  // Don't want store these logs because they trigger a
+-  // state update when we add them to the store.
+-  if (isMessageIgnored(newLog.message.content)) {
+-    return;
+-  }
+-
+-  // If the next log has the same category as the previous one
+-  // then roll it up into the last log in the list by incrementing
+-  // the count (similar to how Chrome does it).
+-  const lastLog = Array.from(logs).pop();
+-  if (lastLog && lastLog.category === newLog.category) {
+-    lastLog.incrementCount();
+-    handleUpdate();
+-    return;
+-  }
+-
+-  if (newLog.level === 'fatal') {
+-    // If possible, to avoid jank, we don't want to open the error before
+-    // it's symbolicated. To do that, we optimistically wait for
+-    // symbolication for up to a second before adding the log.
+-    const OPTIMISTIC_WAIT_TIME = 1000;
+-
+-    let addPendingLog: null | (() => void) = () => {
+-      logs.add(newLog);
+-      if (_selectedIndex < 0) {
+-        setSelectedLog(logs.size - 1);
+-      } else {
+-        handleUpdate();
+-      }
+-      addPendingLog = null;
+-    };
+-
+-    const optimisticTimeout = setTimeout(() => {
+-      if (addPendingLog) {
+-        addPendingLog();
+-      }
+-    }, OPTIMISTIC_WAIT_TIME);
+-
+-    // TODO: HANDLE THIS
+-    newLog.symbolicate('component');
+-
+-    newLog.symbolicate('stack', (status) => {
+-      if (addPendingLog && status !== 'PENDING') {
+-        addPendingLog();
+-        clearTimeout(optimisticTimeout);
+-      } else if (status !== 'PENDING') {
+-        // The log has already been added but we need to trigger a render.
+-        handleUpdate();
+-      }
+-    });
+-  } else if (newLog.level === 'syntax') {
+-    logs.add(newLog);
+-    setSelectedLog(logs.size - 1);
+-  } else {
+-    logs.add(newLog);
+-    handleUpdate();
+-  }
+-}
+-
+-export function addLog(log: LogData): void {
+-  const errorForStackTrace = new Error();
+-
+-  // Parsing logs are expensive so we schedule this
+-  // otherwise spammy logs would pause rendering.
+-  setTimeout(() => {
+-    try {
+-      const stack = parseErrorStack(errorForStackTrace?.stack);
+-
+-      appendNewLog(
+-        new LogBoxLog({
+-          level: log.level,
+-          message: log.message,
+-          isComponentError: false,
+-          stack,
+-          category: log.category,
+-          componentStack: log.componentStack,
+-        })
+-      );
+-    } catch (error) {
+-      reportUnexpectedLogBoxError(error);
+-    }
+-  }, 0);
+-}
+-
+-export function addException(error: ExtendedExceptionData): void {
+-  // Parsing logs are expensive so we schedule this
+-  // otherwise spammy logs would pause rendering.
+-  setTimeout(() => {
+-    try {
+-      appendNewLog(new LogBoxLog(parseLogBoxException(error)));
+-    } catch (loggingError) {
+-      reportUnexpectedLogBoxError(loggingError);
+-    }
+-  }, 0);
+-}
+-
+-export function symbolicateLogNow(type: StackType, log: LogBoxLog) {
+-  log.symbolicate(type, () => {
+-    handleUpdate();
+-  });
+-}
+-
+-export function retrySymbolicateLogNow(type: StackType, log: LogBoxLog) {
+-  log.retrySymbolicate(type, () => {
+-    handleUpdate();
+-  });
+-}
+-
+-export function symbolicateLogLazy(type: StackType, log: LogBoxLog) {
+-  log.symbolicate(type);
+-}
+-
+-export function clear(): void {
+-  if (logs.size > 0) {
+-    logs = new Set();
+-    setSelectedLog(-1);
+-  }
+-}
+-
+-export function setSelectedLog(proposedNewIndex: number): void {
+-  const oldIndex = _selectedIndex;
+-  let newIndex = proposedNewIndex;
+-
+-  const logArray = Array.from(logs);
+-  let index = logArray.length - 1;
+-  while (index >= 0) {
+-    // The latest syntax error is selected and displayed before all other logs.
+-    if (logArray[index].level === 'syntax') {
+-      newIndex = index;
+-      break;
+-    }
+-    index -= 1;
+-  }
+-  _selectedIndex = newIndex;
+-  handleUpdate();
+-  if (NativeLogBox) {
+-    setTimeout(() => {
+-      if (oldIndex < 0 && newIndex >= 0) {
+-        NativeLogBox.show();
+-      } else if (oldIndex >= 0 && newIndex < 0) {
+-        NativeLogBox.hide();
+-      }
+-    }, 0);
+-  }
+-}
+-
+-export function clearWarnings(): void {
+-  const newLogs = Array.from(logs).filter((log) => log.level !== 'warn');
+-  if (newLogs.length !== logs.size) {
+-    logs = new Set(newLogs);
+-    setSelectedLog(-1);
+-    handleUpdate();
+-  }
+-}
+-
+-export function clearErrors(): void {
+-  const newLogs = Array.from(logs).filter((log) => log.level !== 'error' && log.level !== 'fatal');
+-  if (newLogs.length !== logs.size) {
+-    logs = new Set(newLogs);
+-    setSelectedLog(-1);
+-  }
+-}
+-
+-export function dismiss(log: LogBoxLog): void {
+-  if (logs.has(log)) {
+-    logs.delete(log);
+-    handleUpdate();
+-  }
+-}
+-
+-export function getIgnorePatterns(): IgnorePattern[] {
+-  return Array.from(ignorePatterns);
+-}
+-
+-export function addIgnorePatterns(patterns: IgnorePattern[]): void {
+-  const existingSize = ignorePatterns.size;
+-  // The same pattern may be added multiple times, but adding a new pattern
+-  // can be expensive so let's find only the ones that are new.
+-  patterns.forEach((pattern: IgnorePattern) => {
+-    if (pattern instanceof RegExp) {
+-      for (const existingPattern of ignorePatterns) {
+-        if (
+-          existingPattern instanceof RegExp &&
+-          existingPattern.toString() === pattern.toString()
+-        ) {
+-          return;
+-        }
+-      }
+-      ignorePatterns.add(pattern);
+-    }
+-    ignorePatterns.add(pattern);
+-  });
+-  if (ignorePatterns.size === existingSize) {
+-    return;
+-  }
+-  // We need to recheck all of the existing logs.
+-  // This allows adding an ignore pattern anywhere in the codebase.
+-  // Without this, if you ignore a pattern after the a log is created,
+-  // then we would keep showing the log.
+-  logs = new Set(Array.from(logs).filter((log) => !isMessageIgnored(log.message.content)));
+-  handleUpdate();
+-}
+-
+-export function setDisabled(value: boolean): void {
+-  if (value === _isDisabled) {
+-    return;
+-  }
+-  _isDisabled = value;
+-  handleUpdate();
+-}
+-
+-export function isDisabled(): boolean {
+-  return _isDisabled;
+-}
+-
+-export function observe(observer: Observer): Subscription {
+-  const subscription = { observer };
+-  observers.add(subscription);
+-
+-  observer(getNextState());
+-
+-  return {
+-    unsubscribe(): void {
+-      observers.delete(subscription);
+-    },
+-  };
+-}
+-
+-const emitter = new NativeEventEmitter({
+-  addListener() {},
+-  removeListeners() {},
+-});
+-
+-export function withSubscription(WrappedComponent: React.FC<object>): React.Component<object> {
+-  class LogBoxStateSubscription extends React.Component<React.PropsWithChildren<Props>, State> {
+-    static getDerivedStateFromError() {
+-      return { hasError: true };
+-    }
+-
+-    constructor(props: object) {
+-      super(props);
+-
+-      if (process.env.NODE_ENV === 'development') {
+-        emitter.addListener('devLoadingView:hide', () => {
+-          if (this.state.hasError) {
+-            this.retry();
+-          }
+-        });
+-      }
+-    }
+-
+-    componentDidCatch(err: Error, errorInfo: { componentStack: string } & any) {
+-      /* $FlowFixMe[class-object-subtyping] added when improving typing for
+-       * this parameters */
+-      reportLogBoxError(err, errorInfo.componentStack);
+-    }
+-
+-    _subscription?: Subscription;
+-
+-    state = {
+-      logs: new Set<LogBoxLog>(),
+-      isDisabled: false,
+-      hasError: false,
+-      selectedLogIndex: -1,
+-    };
+-
+-    retry = () => {
+-      return new Promise<void>((resolve) => {
+-        this.setState({ hasError: false }, () => {
+-          resolve();
+-        });
+-      });
+-    };
+-
+-    render() {
+-      return (
+-        <LogContext.Provider
+-          value={{
+-            selectedLogIndex: this.state.selectedLogIndex,
+-            isDisabled: this.state.isDisabled,
+-            logs: Array.from(this.state.logs),
+-          }}>
+-          {this.state.hasError ? null : this.props.children}
+-          <WrappedComponent />
+-        </LogContext.Provider>
+-      );
+-    }
+-
+-    componentDidMount(): void {
+-      this._subscription = observe((data) => {
+-        // Ignore the initial empty log
+-        if (data.selectedLogIndex === -1) return;
+-        React.startTransition(() => {
+-          this.setState(data);
+-        });
+-      });
+-    }
+-
+-    componentWillUnmount(): void {
+-      if (this._subscription != null) {
+-        this._subscription.unsubscribe();
+-      }
+-    }
+-
+-    _handleDismiss = (): void => {
+-      // Here we handle the cases when the log is dismissed and it
+-      // was either the last log, or when the current index
+-      // is now outside the bounds of the log array.
+-      const { selectedLogIndex, logs: stateLogs } = this.state;
+-      const logsArray = Array.from(stateLogs);
+-      if (selectedLogIndex != null) {
+-        if (logsArray.length - 1 <= 0) {
+-          setSelectedLog(-1);
+-        } else if (selectedLogIndex >= logsArray.length - 1) {
+-          setSelectedLog(selectedLogIndex - 1);
+-        }
+-
+-        dismiss(logsArray[selectedLogIndex]);
+-      }
+-    };
+-
+-    _handleMinimize = (): void => {
+-      setSelectedLog(-1);
+-    };
+-
+-    _handleSetSelectedLog = (index: number): void => {
+-      setSelectedLog(index);
+-    };
+-  }
+-
+-  // @ts-expect-error
+-  return LogBoxStateSubscription;
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogBoxLog.ts b/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogBoxLog.ts
+deleted file mode 100644
+index 2062390..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogBoxLog.ts
++++ /dev/null
+@@ -1,258 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-import * as LogBoxSymbolication from './LogBoxSymbolication';
+-import type { Stack } from './LogBoxSymbolication';
+-import type { Category, Message, ComponentStack, CodeFrame } from './parseLogBoxLog';
+-
+-type SymbolicationStatus = 'NONE' | 'PENDING' | 'COMPLETE' | 'FAILED';
+-
+-export type LogLevel = 'warn' | 'error' | 'fatal' | 'syntax' | 'static';
+-
+-export type LogBoxLogData = {
+-  level: LogLevel;
+-  type?: string;
+-  message: Message;
+-  stack: Stack;
+-  category: string;
+-  componentStack: ComponentStack;
+-  codeFrame?: CodeFrame;
+-  isComponentError: boolean;
+-};
+-
+-export type StackType = 'stack' | 'component';
+-
+-function componentStackToStack(componentStack: ComponentStack): Stack {
+-  return componentStack.map((stack) => ({
+-    file: stack.fileName,
+-    methodName: stack.content,
+-    lineNumber: stack.location?.row ?? 0,
+-    column: stack.location?.column ?? 0,
+-    arguments: [],
+-  }));
+-}
+-
+-type SymbolicationCallback = (status: SymbolicationStatus) => void;
+-
+-type SymbolicationResult =
+-  | { error: null; stack: null; status: 'NONE' }
+-  | { error: null; stack: null; status: 'PENDING' }
+-  | { error: null; stack: Stack; status: 'COMPLETE' }
+-  | { error: Error; stack: null; status: 'FAILED' };
+-
+-export class LogBoxLog {
+-  message: Message;
+-  type: string;
+-  category: Category;
+-  componentStack: ComponentStack;
+-  stack: Stack;
+-  count: number;
+-  level: LogLevel;
+-  codeFrame?: CodeFrame;
+-  isComponentError: boolean;
+-  symbolicated: Record<StackType, SymbolicationResult> = {
+-    stack: {
+-      error: null,
+-      stack: null,
+-      status: 'NONE',
+-    },
+-    component: {
+-      error: null,
+-      stack: null,
+-      status: 'NONE',
+-    },
+-  };
+-
+-  private callbacks: Map<StackType, Set<SymbolicationCallback>> = new Map();
+-
+-  constructor(
+-    data: LogBoxLogData & {
+-      symbolicated?: Record<StackType, SymbolicationResult>;
+-    }
+-  ) {
+-    this.level = data.level;
+-    this.type = data.type ?? 'error';
+-    this.message = data.message;
+-    this.stack = data.stack;
+-    this.category = data.category;
+-    this.componentStack = data.componentStack;
+-    this.codeFrame = data.codeFrame;
+-    this.isComponentError = data.isComponentError;
+-    this.count = 1;
+-    this.symbolicated = data.symbolicated ?? this.symbolicated;
+-  }
+-
+-  incrementCount(): void {
+-    this.count += 1;
+-  }
+-
+-  getAvailableStack(type: StackType): Stack | null {
+-    if (this.symbolicated[type].status === 'COMPLETE') {
+-      return this.symbolicated[type].stack;
+-    }
+-    return this.getStack(type);
+-  }
+-
+-  private flushCallbacks(type: StackType): void {
+-    const callbacks = this.callbacks.get(type);
+-    const status = this.symbolicated[type].status;
+-    if (callbacks) {
+-      for (const callback of callbacks) {
+-        callback(status);
+-      }
+-      callbacks.clear();
+-    }
+-  }
+-
+-  private pushCallback(type: StackType, callback: SymbolicationCallback): void {
+-    let callbacks = this.callbacks.get(type);
+-    if (!callbacks) {
+-      callbacks = new Set();
+-      this.callbacks.set(type, callbacks);
+-    }
+-    callbacks.add(callback);
+-  }
+-
+-  retrySymbolicate(type: StackType, callback?: (status: SymbolicationStatus) => void): void {
+-    this._symbolicate(type, true, callback);
+-  }
+-
+-  symbolicate(type: StackType, callback?: (status: SymbolicationStatus) => void): void {
+-    this._symbolicate(type, false, callback);
+-  }
+-
+-  private _symbolicate(
+-    type: StackType,
+-    retry: boolean,
+-    callback?: (status: SymbolicationStatus) => void
+-  ): void {
+-    if (callback) {
+-      this.pushCallback(type, callback);
+-    }
+-    const status = this.symbolicated[type].status;
+-
+-    if (status === 'COMPLETE') {
+-      return this.flushCallbacks(type);
+-    }
+-
+-    if (retry) {
+-      LogBoxSymbolication.deleteStack(this.getStack(type));
+-      this.handleSymbolicate(type);
+-    } else {
+-      if (status === 'NONE') {
+-        this.handleSymbolicate(type);
+-      }
+-    }
+-  }
+-
+-  private componentStackCache: Stack | null = null;
+-
+-  private getStack(type: StackType): Stack {
+-    if (type === 'component') {
+-      if (this.componentStackCache == null) {
+-        this.componentStackCache = componentStackToStack(this.componentStack);
+-      }
+-      return this.componentStackCache;
+-    }
+-    return this.stack;
+-  }
+-
+-  private handleSymbolicate(type: StackType): void {
+-    if (type === 'component' && !this.componentStack?.length) {
+-      return;
+-    }
+-
+-    if (this.symbolicated[type].status !== 'PENDING') {
+-      this.updateStatus(type, null, null, null);
+-      LogBoxSymbolication.symbolicate(ensureStackFilesHaveParams(this.getStack(type))).then(
+-        (data) => {
+-          this.updateStatus(type, null, data?.stack, data?.codeFrame);
+-        },
+-        (error) => {
+-          this.updateStatus(type, error, null, null);
+-        }
+-      );
+-    }
+-  }
+-
+-  private updateStatus(
+-    type: StackType,
+-    error?: Error | null,
+-    stack?: Stack | null,
+-    codeFrame?: CodeFrame | null
+-  ): void {
+-    const lastStatus = this.symbolicated[type].status;
+-    if (error != null) {
+-      this.symbolicated[type] = {
+-        error,
+-        stack: null,
+-        status: 'FAILED',
+-      };
+-    } else if (stack != null) {
+-      if (codeFrame) {
+-        this.codeFrame = codeFrame;
+-      }
+-
+-      this.symbolicated[type] = {
+-        error: null,
+-        stack,
+-        status: 'COMPLETE',
+-      };
+-    } else {
+-      this.symbolicated[type] = {
+-        error: null,
+-        stack: null,
+-        status: 'PENDING',
+-      };
+-    }
+-
+-    const status = this.symbolicated[type].status;
+-    if (lastStatus !== status) {
+-      if (['COMPLETE', 'FAILED'].includes(status)) {
+-        this.flushCallbacks(type);
+-      }
+-    }
+-  }
+-}
+-
+-// Sometime the web stacks don't have correct query params, this can lead to Metro errors when it attempts to resolve without a platform.
+-// This will attempt to reconcile the issue by adding the current query params to the stack frames if they exist, or fallback to some common defaults.
+-function ensureStackFilesHaveParams(stack: Stack): Stack {
+-  const currentSrc =
+-    typeof document !== 'undefined' && document.currentScript
+-      ? ('src' in document.currentScript && document.currentScript.src) || null
+-      : null;
+-
+-  const currentParams = currentSrc
+-    ? new URLSearchParams(currentSrc)
+-    : new URLSearchParams({
+-        platform: 'web',
+-        dev: String(__DEV__),
+-      });
+-
+-  return stack.map((frame) => {
+-    if (
+-      !frame.file?.startsWith('http') ||
+-      // Account for Metro malformed URLs
+-      frame.file.includes('&platform=')
+-    )
+-      return frame;
+-
+-    const url = new URL(frame.file);
+-    if (url.searchParams.has('platform')) {
+-      return frame;
+-    }
+-
+-    currentParams.forEach((value, key) => {
+-      if (url.searchParams.has(key)) return;
+-      url.searchParams.set(key, value);
+-    });
+-
+-    return { ...frame, file: url.toString() };
+-  });
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogBoxSymbolication.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogBoxSymbolication.tsx
+deleted file mode 100644
+index f2ce7b4..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogBoxSymbolication.tsx
++++ /dev/null
+@@ -1,64 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-import { StackFrame as UpstreamStackFrame } from 'stacktrace-parser';
+-
+-import symbolicateStackTrace from '../modules/symbolicateStackTrace';
+-
+-type SymbolicatedStackTrace = any;
+-
+-type StackFrame = UpstreamStackFrame & { collapse?: boolean };
+-
+-export type Stack = StackFrame[];
+-
+-const cache: Map<Stack, Promise<SymbolicatedStackTrace>> = new Map();
+-
+-/**
+- * Sanitize because sometimes, `symbolicateStackTrace` gives us invalid values.
+- */
+-const sanitize = ({
+-  stack: maybeStack,
+-  codeFrame,
+-}: SymbolicatedStackTrace): SymbolicatedStackTrace => {
+-  if (!Array.isArray(maybeStack)) {
+-    throw new Error('Expected stack to be an array.');
+-  }
+-  const stack: StackFrame[] = [];
+-  for (const maybeFrame of maybeStack) {
+-    let collapse = false;
+-    if ('collapse' in maybeFrame) {
+-      if (typeof maybeFrame.collapse !== 'boolean') {
+-        throw new Error('Expected stack frame `collapse` to be a boolean.');
+-      }
+-      collapse = maybeFrame.collapse;
+-    }
+-    stack.push({
+-      arguments: [],
+-      column: maybeFrame.column,
+-      file: maybeFrame.file,
+-      lineNumber: maybeFrame.lineNumber,
+-      methodName: maybeFrame.methodName,
+-      collapse,
+-    });
+-  }
+-  return { stack, codeFrame };
+-};
+-
+-export function deleteStack(stack: Stack): void {
+-  cache.delete(stack);
+-}
+-
+-export function symbolicate(stack: Stack): Promise<SymbolicatedStackTrace> {
+-  let promise = cache.get(stack);
+-  if (promise == null) {
+-    promise = symbolicateStackTrace(stack).then(sanitize);
+-    cache.set(stack, promise);
+-  }
+-
+-  return promise;
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogContext.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogContext.tsx
+deleted file mode 100644
+index 4d75821..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/Data/LogContext.tsx
++++ /dev/null
+@@ -1,40 +0,0 @@
+-import React from 'react';
+-
+-import { LogBoxLog } from './LogBoxLog';
+-
+-// Context provider for Array<LogBoxLog>
+-
+-export const LogContext = React.createContext<{
+-  selectedLogIndex: number;
+-  isDisabled: boolean;
+-  logs: LogBoxLog[];
+-} | null>(null);
+-
+-export function useLogs(): {
+-  selectedLogIndex: number;
+-  isDisabled: boolean;
+-  logs: LogBoxLog[];
+-} {
+-  const logs = React.useContext(LogContext);
+-  if (!logs) {
+-    if (process.env.EXPO_OS === 'web' && typeof window !== 'undefined') {
+-      // Logbox data that is pre-fetched on the dev server and rendered here.
+-      const expoCliStaticErrorElement = document.getElementById('_expo-static-error');
+-      if (expoCliStaticErrorElement?.textContent) {
+-        const raw = JSON.parse(expoCliStaticErrorElement.textContent);
+-        return {
+-          ...raw,
+-          logs: raw.logs.map((raw: any) => new LogBoxLog(raw)),
+-        };
+-      }
+-    }
+-
+-    throw new Error('useLogs must be used within a LogProvider');
+-  }
+-  return logs;
+-}
+-
+-export function useSelectedLog() {
+-  const { selectedLogIndex, logs } = useLogs();
+-  return logs[selectedLogIndex];
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/Data/parseLogBoxLog.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/Data/parseLogBoxLog.tsx
+deleted file mode 100644
+index 0ef4180..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/Data/parseLogBoxLog.tsx
++++ /dev/null
+@@ -1,342 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-import type { LogBoxLogData } from './LogBoxLog';
+-import parseErrorStack from '../modules/parseErrorStack';
+-import stringifySafe from '../modules/stringifySafe';
+-type ExceptionData = any;
+-
+-const BABEL_TRANSFORM_ERROR_FORMAT =
+-  /^(?:TransformError )?(?:SyntaxError: |ReferenceError: )(.*): (.*) \((\d+):(\d+)\)\n\n([\s\S]+)/;
+-const BABEL_CODE_FRAME_ERROR_FORMAT =
+-  /^(?:TransformError )?(?:.*):? (?:.*?)([/|\\].*): ([\s\S]+?)\n([ >]{2}[\d\s]+ \|[\s\S]+|\u{001b}[\s\S]+)/u;
+-const METRO_ERROR_FORMAT =
+-  /^(?:InternalError Metro has encountered an error:) (.*): (.*) \((\d+):(\d+)\)\n\n([\s\S]+)/u;
+-
+-export type ExtendedExceptionData = ExceptionData & {
+-  isComponentError: boolean;
+-  [key: string]: any;
+-};
+-export type Category = string;
+-export type CodeFrame = {
+-  content: string;
+-  location?: {
+-    row: number;
+-    column: number;
+-    [key: string]: any;
+-  } | null;
+-  fileName: string;
+-
+-  // TODO: When React switched to using call stack frames,
+-  // we gained the ability to use the collapse flag, but
+-  // it is not integrated into the LogBox UI.
+-  collapse?: boolean;
+-};
+-
+-export type Message = {
+-  content: string;
+-  substitutions: {
+-    length: number;
+-    offset: number;
+-  }[];
+-};
+-
+-export type ComponentStack = CodeFrame[];
+-
+-const SUBSTITUTION = '\ufeff%s';
+-
+-export function parseInterpolation(args: readonly any[]): {
+-  category: Category;
+-  message: Message;
+-} {
+-  const categoryParts: string[] = [];
+-  const contentParts: string[] = [];
+-  const substitutionOffsets: { length: number; offset: number }[] = [];
+-
+-  const remaining = [...args];
+-  if (typeof remaining[0] === 'string') {
+-    const formatString = String(remaining.shift());
+-    const formatStringParts = formatString.split('%s');
+-    const substitutionCount = formatStringParts.length - 1;
+-    const substitutions = remaining.splice(0, substitutionCount);
+-
+-    let categoryString = '';
+-    let contentString = '';
+-
+-    let substitutionIndex = 0;
+-    for (const formatStringPart of formatStringParts) {
+-      categoryString += formatStringPart;
+-      contentString += formatStringPart;
+-
+-      if (substitutionIndex < substitutionCount) {
+-        if (substitutionIndex < substitutions.length) {
+-          // Don't stringify a string type.
+-          // It adds quotation mark wrappers around the string,
+-          // which causes the LogBox to look odd.
+-          const substitution =
+-            typeof substitutions[substitutionIndex] === 'string'
+-              ? substitutions[substitutionIndex]
+-              : stringifySafe(substitutions[substitutionIndex]);
+-          substitutionOffsets.push({
+-            length: substitution.length,
+-            offset: contentString.length,
+-          });
+-
+-          categoryString += SUBSTITUTION;
+-          contentString += substitution;
+-        } else {
+-          substitutionOffsets.push({
+-            length: 2,
+-            offset: contentString.length,
+-          });
+-
+-          categoryString += '%s';
+-          contentString += '%s';
+-        }
+-
+-        substitutionIndex++;
+-      }
+-    }
+-
+-    categoryParts.push(categoryString);
+-    contentParts.push(contentString);
+-  }
+-
+-  const remainingArgs = remaining.map((arg) => {
+-    // Don't stringify a string type.
+-    // It adds quotation mark wrappers around the string,
+-    // which causes the LogBox to look odd.
+-    return typeof arg === 'string' ? arg : stringifySafe(arg);
+-  });
+-  categoryParts.push(...remainingArgs);
+-  contentParts.push(...remainingArgs);
+-
+-  return {
+-    category: categoryParts.join(' '),
+-    message: {
+-      content: contentParts.join(' '),
+-      substitutions: substitutionOffsets,
+-    },
+-  };
+-}
+-
+-function isComponentStack(consoleArgument: string) {
+-  const isOldComponentStackFormat = / {4}in/.test(consoleArgument);
+-  const isNewComponentStackFormat = / {4}at/.test(consoleArgument);
+-  const isNewJSCComponentStackFormat = /@.*\n/.test(consoleArgument);
+-
+-  return isOldComponentStackFormat || isNewComponentStackFormat || isNewJSCComponentStackFormat;
+-}
+-
+-export function parseComponentStack(message: string): ComponentStack {
+-  // In newer versions of React, the component stack is formatted as a call stack frame.
+-  // First try to parse the component stack as a call stack frame, and if that doesn't
+-  // work then we'll fallback to the old custom component stack format parsing.
+-  const stack = parseErrorStack(message);
+-  if (stack && stack.length > 0) {
+-    return stack.map((frame) => ({
+-      content: frame.methodName,
+-      collapse: frame.collapse || false,
+-      fileName: frame.file == null ? 'unknown' : frame.file,
+-      location: {
+-        column: frame.column == null ? -1 : frame.column,
+-        row: frame.lineNumber == null ? -1 : frame.lineNumber,
+-      },
+-    }));
+-  }
+-
+-  return message
+-    .split(/\n {4}in /g)
+-    .map((s) => {
+-      if (!s) {
+-        return null;
+-      }
+-      const match = s.match(/(.*) \(at (.*\.js):([\d]+)\)/);
+-      if (!match) {
+-        return null;
+-      }
+-
+-      const [content, fileName, row] = match.slice(1);
+-      return {
+-        content,
+-        fileName,
+-        location: { column: -1, row: parseInt(row, 10) },
+-      };
+-    })
+-    .filter(Boolean) as ComponentStack;
+-}
+-
+-export function parseLogBoxException(error: ExtendedExceptionData): LogBoxLogData {
+-  const message = error.originalMessage != null ? error.originalMessage : 'Unknown';
+-
+-  const metroInternalError = message.match(METRO_ERROR_FORMAT);
+-  if (metroInternalError) {
+-    const [content, fileName, row, column, codeFrame] = metroInternalError.slice(1);
+-
+-    return {
+-      level: 'fatal',
+-      type: 'Metro Error',
+-      stack: [],
+-      isComponentError: false,
+-      componentStack: [],
+-      codeFrame: {
+-        fileName,
+-        location: {
+-          row: parseInt(row, 10),
+-          column: parseInt(column, 10),
+-        },
+-        content: codeFrame,
+-      },
+-      message: {
+-        content,
+-        substitutions: [],
+-      },
+-      category: `${fileName}-${row}-${column}`,
+-    };
+-  }
+-
+-  const babelTransformError = message.match(BABEL_TRANSFORM_ERROR_FORMAT);
+-  if (babelTransformError) {
+-    // Transform errors are thrown from inside the Babel transformer.
+-    const [fileName, content, row, column, codeFrame] = babelTransformError.slice(1);
+-
+-    return {
+-      level: 'syntax',
+-      stack: [],
+-      isComponentError: false,
+-      componentStack: [],
+-      codeFrame: {
+-        fileName,
+-        location: {
+-          row: parseInt(row, 10),
+-          column: parseInt(column, 10),
+-        },
+-        content: codeFrame,
+-      },
+-      message: {
+-        content,
+-        substitutions: [],
+-      },
+-      category: `${fileName}-${row}-${column}`,
+-    };
+-  }
+-
+-  const babelCodeFrameError = message.match(BABEL_CODE_FRAME_ERROR_FORMAT);
+-
+-  if (babelCodeFrameError) {
+-    // Codeframe errors are thrown from any use of buildCodeFrameError.
+-    const [fileName, content, codeFrame] = babelCodeFrameError.slice(1);
+-    return {
+-      level: 'syntax',
+-      stack: [],
+-      isComponentError: false,
+-      componentStack: [],
+-      codeFrame: {
+-        fileName,
+-        location: null, // We are not given the location.
+-        content: codeFrame,
+-      },
+-      message: {
+-        content,
+-        substitutions: [],
+-      },
+-      category: `${fileName}-${1}-${1}`,
+-    };
+-  }
+-
+-  if (message.match(/^TransformError /)) {
+-    return {
+-      level: 'syntax',
+-      stack: error.stack,
+-      isComponentError: error.isComponentError,
+-      componentStack: [],
+-      message: {
+-        content: message,
+-        substitutions: [],
+-      },
+-      category: message,
+-    };
+-  }
+-
+-  const componentStack = error.componentStack;
+-  if (error.isFatal || error.isComponentError) {
+-    return {
+-      level: 'fatal',
+-      stack: error.stack,
+-      isComponentError: error.isComponentError,
+-      componentStack: componentStack != null ? parseComponentStack(componentStack) : [],
+-      ...parseInterpolation([message]),
+-    };
+-  }
+-
+-  if (componentStack != null) {
+-    // It is possible that console errors have a componentStack.
+-    return {
+-      level: 'error',
+-      stack: error.stack,
+-      isComponentError: error.isComponentError,
+-      componentStack: parseComponentStack(componentStack),
+-      ...parseInterpolation([message]),
+-    };
+-  }
+-
+-  // Most `console.error` calls won't have a componentStack. We parse them like
+-  // regular logs which have the component stack burried in the message.
+-  return {
+-    level: 'error',
+-    stack: error.stack,
+-    isComponentError: error.isComponentError,
+-    ...parseLogBoxLog([message]),
+-  };
+-}
+-
+-export function parseLogBoxLog(args: readonly any[]): {
+-  componentStack: ComponentStack;
+-  category: Category;
+-  message: Message;
+-} {
+-  const message = args[0];
+-  let argsWithoutComponentStack: any[] = [];
+-  let componentStack: ComponentStack = [];
+-
+-  // Extract component stack from warnings like "Some warning%s".
+-  if (typeof message === 'string' && message.slice(-2) === '%s' && args.length > 0) {
+-    const lastArg = args[args.length - 1];
+-    if (typeof lastArg === 'string' && isComponentStack(lastArg)) {
+-      argsWithoutComponentStack = args.slice(0, -1);
+-      argsWithoutComponentStack[0] = message.slice(0, -2);
+-      componentStack = parseComponentStack(lastArg);
+-    }
+-  }
+-
+-  if (componentStack.length === 0) {
+-    // Try finding the component stack elsewhere.
+-    for (const arg of args) {
+-      if (typeof arg === 'string' && isComponentStack(arg)) {
+-        // Strip out any messages before the component stack.
+-        let messageEndIndex = arg.search(/\n {4}(in|at) /);
+-        if (messageEndIndex < 0) {
+-          // Handle JSC component stacks.
+-          messageEndIndex = arg.search(/\n/);
+-        }
+-        if (messageEndIndex > 0) {
+-          argsWithoutComponentStack.push(arg.slice(0, messageEndIndex));
+-        }
+-
+-        componentStack = parseComponentStack(arg);
+-      } else {
+-        argsWithoutComponentStack.push(arg);
+-      }
+-    }
+-  }
+-
+-  return {
+-    ...parseInterpolation(argsWithoutComponentStack),
+-    componentStack,
+-  };
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/ErrorOverlay.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/ErrorOverlay.tsx
+deleted file mode 100644
+index 983dc52..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/ErrorOverlay.tsx
++++ /dev/null
+@@ -1,187 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React, { useCallback, useEffect, useState } from 'react';
+-import { ScrollView, View, StyleSheet } from 'react-native';
+-
+-import * as LogBoxData from './Data/LogBoxData';
+-import { LogBoxLog, StackType } from './Data/LogBoxLog';
+-import { useLogs, useSelectedLog } from './Data/LogContext';
+-import * as LogBoxStyle from './UI/LogBoxStyle';
+-import { LogBoxInspectorCodeFrame } from './overlay/LogBoxInspectorCodeFrame';
+-import { LogBoxInspectorFooter as ErrorOverlayFooter } from './overlay/LogBoxInspectorFooter';
+-import { LogBoxInspectorHeader as ErrorOverlayHeader } from './overlay/LogBoxInspectorHeader';
+-import { LogBoxInspectorMessageHeader } from './overlay/LogBoxInspectorMessageHeader';
+-import { LogBoxInspectorStackFrames } from './overlay/LogBoxInspectorStackFrames';
+-
+-const HEADER_TITLE_MAP = {
+-  warn: 'Console Warning',
+-  error: 'Console Error',
+-  fatal: 'Uncaught Error',
+-  syntax: 'Syntax Error',
+-  static: 'Server Error',
+-  component: 'Render Error',
+-};
+-
+-export function LogBoxInspectorContainer() {
+-  const { selectedLogIndex, logs } = useLogs();
+-  const log = logs[selectedLogIndex];
+-  if (log == null) {
+-    return null;
+-  }
+-  return <LogBoxInspector log={log} selectedLogIndex={selectedLogIndex} logs={logs} />;
+-}
+-
+-export function LogBoxInspector({
+-  log,
+-  selectedLogIndex,
+-  logs,
+-}: {
+-  log: LogBoxLog;
+-  selectedLogIndex: number;
+-  logs: LogBoxLog[];
+-}) {
+-  const onDismiss = useCallback((): void => {
+-    // Here we handle the cases when the log is dismissed and it
+-    // was either the last log, or when the current index
+-    // is now outside the bounds of the log array.
+-    const logsArray = Array.from(logs);
+-    if (selectedLogIndex != null) {
+-      if (logsArray.length - 1 <= 0) {
+-        LogBoxData.setSelectedLog(-1);
+-      } else if (selectedLogIndex >= logsArray.length - 1) {
+-        LogBoxData.setSelectedLog(selectedLogIndex - 1);
+-      }
+-
+-      LogBoxData.dismiss(logsArray[selectedLogIndex]);
+-    }
+-  }, [selectedLogIndex]);
+-
+-  const onMinimize = useCallback((): void => {
+-    LogBoxData.setSelectedLog(-1);
+-  }, []);
+-
+-  const onChangeSelectedIndex = useCallback((index: number): void => {
+-    LogBoxData.setSelectedLog(index);
+-  }, []);
+-
+-  useEffect(() => {
+-    if (log) {
+-      LogBoxData.symbolicateLogNow('stack', log);
+-      LogBoxData.symbolicateLogNow('component', log);
+-    }
+-  }, [log]);
+-
+-  useEffect(() => {
+-    // Optimistically symbolicate the last and next logs.
+-    if (logs.length > 1) {
+-      const selected = selectedLogIndex;
+-      const lastIndex = logs.length - 1;
+-      const prevIndex = selected - 1 < 0 ? lastIndex : selected - 1;
+-      const nextIndex = selected + 1 > lastIndex ? 0 : selected + 1;
+-      for (const type of ['component', 'stack'] as const) {
+-        LogBoxData.symbolicateLogLazy(type, logs[prevIndex]);
+-        LogBoxData.symbolicateLogLazy(type, logs[nextIndex]);
+-      }
+-    }
+-  }, [logs, selectedLogIndex]);
+-
+-  const _handleRetry = useCallback(
+-    (type: StackType) => {
+-      LogBoxData.retrySymbolicateLogNow(type, log);
+-    },
+-    [log]
+-  );
+-
+-  return (
+-    <View style={styles.container}>
+-      <ErrorOverlayHeader onSelectIndex={onChangeSelectedIndex} level={log.level} />
+-      <ErrorOverlayBody onRetry={_handleRetry} />
+-      <ErrorOverlayFooter onDismiss={onDismiss} onMinimize={onMinimize} />
+-    </View>
+-  );
+-}
+-
+-export function ErrorOverlayBody({ onRetry }: { onRetry: (type: StackType) => void }) {
+-  const log = useSelectedLog();
+-  return <ErrorOverlayBodyContents log={log} onRetry={onRetry} />;
+-}
+-
+-export function ErrorOverlayBodyContents({
+-  log,
+-  onRetry,
+-}: {
+-  log: LogBoxLog;
+-  onRetry: (type: StackType) => void;
+-}) {
+-  const [collapsed, setCollapsed] = useState(true);
+-
+-  useEffect(() => {
+-    setCollapsed(true);
+-  }, [log]);
+-
+-  const headerTitle = HEADER_TITLE_MAP[log.isComponentError ? 'component' : log.level] ?? log.type;
+-
+-  const header = (
+-    <LogBoxInspectorMessageHeader
+-      collapsed={collapsed}
+-      onPress={() => setCollapsed(!collapsed)}
+-      message={log.message}
+-      level={log.level}
+-      title={headerTitle}
+-    />
+-  );
+-
+-  // Hide useless React stack.
+-  const needsStack = !log.message.content.match(
+-    /(Expected server HTML to contain a matching|Text content did not match\.)/
+-  );
+-
+-  return (
+-    <>
+-      {collapsed && header}
+-      <ScrollView style={styles.scrollBody}>
+-        {!collapsed && header}
+-
+-        <LogBoxInspectorCodeFrame codeFrame={log.codeFrame} />
+-        {needsStack && (
+-          <LogBoxInspectorStackFrames
+-            type="stack"
+-            // eslint-disable-next-line react/jsx-no-bind
+-            onRetry={onRetry.bind(onRetry, 'stack')}
+-          />
+-        )}
+-        {!!log?.componentStack?.length && (
+-          <LogBoxInspectorStackFrames
+-            type="component"
+-            // eslint-disable-next-line react/jsx-no-bind
+-            onRetry={onRetry.bind(onRetry, 'component')}
+-          />
+-        )}
+-      </ScrollView>
+-    </>
+-  );
+-}
+-
+-const styles = StyleSheet.create({
+-  scrollBody: {
+-    backgroundColor: LogBoxStyle.getBackgroundColor(1),
+-    flex: 1,
+-  },
+-  container: {
+-    top: 0,
+-    left: 0,
+-    bottom: 0,
+-    right: 0,
+-    zIndex: 999,
+-    flex: 1,
+-    // @ts-expect-error: fixed is not in the RN types but it works on web
+-    position: 'fixed',
+-  },
+-});
+-
+-export default LogBoxData.withSubscription(LogBoxInspectorContainer);
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/UI/AnsiHighlight.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/UI/AnsiHighlight.tsx
+deleted file mode 100644
+index 3cf079d..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/UI/AnsiHighlight.tsx
++++ /dev/null
+@@ -1,97 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import Anser from 'anser';
+-import React from 'react';
+-import { StyleSheet, Text, View } from 'react-native';
+-import type { StyleProp, TextStyle } from 'react-native';
+-
+-// Afterglow theme from https://iterm2colorschemes.com/
+-const COLORS: Record<string, string> = {
+-  'ansi-black': 'rgb(27, 27, 27)',
+-  'ansi-red': 'rgb(187, 86, 83)',
+-  'ansi-green': 'rgb(144, 157, 98)',
+-  'ansi-yellow': 'rgb(234, 193, 121)',
+-  'ansi-blue': 'rgb(125, 169, 199)',
+-  'ansi-magenta': 'rgb(176, 101, 151)',
+-  'ansi-cyan': 'rgb(140, 220, 216)',
+-  // Instead of white, use the default color provided to the component
+-  // 'ansi-white': 'rgb(216, 216, 216)',
+-  'ansi-bright-black': 'rgb(98, 98, 98)',
+-  'ansi-bright-red': 'rgb(187, 86, 83)',
+-  'ansi-bright-green': 'rgb(144, 157, 98)',
+-  'ansi-bright-yellow': 'rgb(234, 193, 121)',
+-  'ansi-bright-blue': 'rgb(125, 169, 199)',
+-  'ansi-bright-magenta': 'rgb(176, 101, 151)',
+-  'ansi-bright-cyan': 'rgb(140, 220, 216)',
+-  'ansi-bright-white': 'rgb(247, 247, 247)',
+-};
+-
+-export function Ansi({ text, style }: { text: string; style: StyleProp<TextStyle> }) {
+-  let commonWhitespaceLength = Infinity;
+-  const parsedLines = text.split(/\n/).map((line) =>
+-    Anser.ansiToJson(line, {
+-      json: true,
+-      remove_empty: true,
+-      use_classes: true,
+-    })
+-  );
+-
+-  parsedLines.map((lines) => {
+-    // The third item on each line includes the whitespace of the source code.
+-    // We are looking for the least amount of common whitespace to trim all lines.
+-    // Example: Array [" ", " 96 |", "     text", ...]
+-    const match = lines[2] && lines[2]?.content?.match(/^ +/);
+-    const whitespaceLength = (match && match[0]?.length) || 0;
+-    if (whitespaceLength < commonWhitespaceLength) {
+-      commonWhitespaceLength = whitespaceLength;
+-    }
+-  });
+-
+-  const getText = (content: string, key: number) => {
+-    if (key === 1) {
+-      // Remove the vertical bar after line numbers
+-      return content.replace(/\| $/, ' ');
+-    } else if (key === 2 && commonWhitespaceLength < Infinity) {
+-      // Remove common whitespace at the beginning of the line
+-      return content.substr(commonWhitespaceLength);
+-    } else {
+-      return content;
+-    }
+-  };
+-
+-  return (
+-    <>
+-      {parsedLines.map((items, i) => (
+-        <View style={styles.line} key={i}>
+-          {items.map((bundle, key) => {
+-            const textStyle =
+-              bundle.fg && COLORS[bundle.fg]
+-                ? {
+-                    backgroundColor: bundle.bg && COLORS[bundle.bg],
+-                    color: bundle.fg && COLORS[bundle.fg],
+-                  }
+-                : {
+-                    backgroundColor: bundle.bg && COLORS[bundle.bg],
+-                  };
+-            return (
+-              <Text style={[style, textStyle]} key={key}>
+-                {getText(bundle.content, key)}
+-              </Text>
+-            );
+-          })}
+-        </View>
+-      ))}
+-    </>
+-  );
+-}
+-
+-const styles = StyleSheet.create({
+-  line: {
+-    flexDirection: 'row',
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/UI/LogBoxButton.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/UI/LogBoxButton.tsx
+deleted file mode 100644
+index 935782f..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/UI/LogBoxButton.tsx
++++ /dev/null
+@@ -1,63 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React, { useState } from 'react';
+-import { GestureResponderEvent, Insets, Platform, Pressable, View, ViewStyle } from 'react-native';
+-
+-import * as LogBoxStyle from './LogBoxStyle';
+-
+-type Props = {
+-  backgroundColor: {
+-    default: string;
+-    pressed: string;
+-  };
+-  children?: any;
+-  hitSlop?: Insets;
+-  onPress?: ((event: GestureResponderEvent) => void) | null;
+-  style?: ViewStyle;
+-};
+-
+-export function LogBoxButton(props: Props) {
+-  const [pressed, setPressed] = useState(false);
+-
+-  let backgroundColor = props.backgroundColor;
+-  if (!backgroundColor) {
+-    backgroundColor = {
+-      default: LogBoxStyle.getBackgroundColor(0.95),
+-      pressed: LogBoxStyle.getBackgroundColor(0.6),
+-    };
+-  }
+-
+-  const content = (
+-    <View
+-      style={[
+-        {
+-          backgroundColor: pressed ? backgroundColor.pressed : backgroundColor.default,
+-          ...Platform.select({
+-            web: {
+-              cursor: 'pointer',
+-            },
+-          }),
+-        },
+-        props.style,
+-      ]}>
+-      {props.children}
+-    </View>
+-  );
+-
+-  return props.onPress == null ? (
+-    content
+-  ) : (
+-    <Pressable
+-      hitSlop={props.hitSlop}
+-      onPress={props.onPress}
+-      onPressIn={() => setPressed(true)}
+-      onPressOut={() => setPressed(false)}>
+-      {content}
+-    </Pressable>
+-  );
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/UI/LogBoxMessage.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/UI/LogBoxMessage.tsx
+deleted file mode 100644
+index 3a7e83e..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/UI/LogBoxMessage.tsx
++++ /dev/null
+@@ -1,73 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import { StyleProp, Text, TextStyle } from 'react-native';
+-
+-import type { Message } from '../Data/parseLogBoxLog';
+-
+-type Props = {
+-  message: Message;
+-  style: StyleProp<TextStyle>;
+-  plaintext?: boolean;
+-  maxLength?: number;
+-};
+-
+-const cleanContent = (content: string) =>
+-  content.replace(/^(TransformError |Warning: (Warning: )?|Error: )/g, '');
+-
+-export function LogBoxMessage(props: Props): React.ReactElement {
+-  const { content, substitutions }: Message = props.message;
+-
+-  if (props.plaintext === true) {
+-    return <Text>{cleanContent(content)}</Text>;
+-  }
+-
+-  const maxLength = props.maxLength != null ? props.maxLength : Infinity;
+-  const substitutionStyle: StyleProp<TextStyle> = props.style;
+-  const elements: React.ReactElement[] = [];
+-  let length = 0;
+-  const createUnderLength = (key: string | '-1', message: string, style?: StyleProp<TextStyle>) => {
+-    let cleanMessage = cleanContent(message);
+-
+-    if (props.maxLength != null) {
+-      cleanMessage = cleanMessage.slice(0, props.maxLength - length);
+-    }
+-
+-    if (length < maxLength) {
+-      elements.push(
+-        <Text key={key} style={style}>
+-          {cleanMessage}
+-        </Text>
+-      );
+-    }
+-
+-    length += cleanMessage.length;
+-  };
+-
+-  const lastOffset = substitutions.reduce((prevOffset, substitution, index) => {
+-    const key = String(index);
+-
+-    if (substitution.offset > prevOffset) {
+-      const prevPart = content.substr(prevOffset, substitution.offset - prevOffset);
+-
+-      createUnderLength(key, prevPart);
+-    }
+-
+-    const substititionPart = content.substr(substitution.offset, substitution.length);
+-
+-    createUnderLength(key + '.5', substititionPart, substitutionStyle);
+-    return substitution.offset + substitution.length;
+-  }, 0);
+-
+-  if (lastOffset < content.length) {
+-    const lastPart = content.substr(lastOffset);
+-    createUnderLength('-1', lastPart);
+-  }
+-
+-  return <>{elements}</>;
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/UI/LogBoxStyle.ts b/node_modules/@expo/metro-runtime/src/error-overlay/UI/LogBoxStyle.ts
+deleted file mode 100644
+index 5b4862e..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/UI/LogBoxStyle.ts
++++ /dev/null
+@@ -1,64 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-export function getBackgroundColor(opacity?: number): string {
+-  return `rgba(0, 0, 0, ${opacity == null ? 1 : opacity})`;
+-  // return `rgba(51, 51, 51, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getBackgroundLightColor(opacity?: number): string {
+-  return `rgba(69, 69, 69, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getBackgroundDarkColor(opacity?: number): string {
+-  return `rgba(34, 34, 34, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getWarningColor(opacity?: number): string {
+-  return `rgba(250, 186, 48, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getWarningDarkColor(opacity?: number): string {
+-  return `rgba(224, 167, 8, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getFatalColor(opacity?: number): string {
+-  return `rgba(243, 83, 105, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getFatalDarkColor(opacity?: number): string {
+-  return `rgba(208, 75, 95, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getErrorColor(opacity?: number): string {
+-  return `rgba(243, 83, 105, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getErrorDarkColor(opacity?: number): string {
+-  return `rgba(208, 75, 95, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getLogColor(opacity?: number): string {
+-  return `rgba(119, 119, 119, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getWarningHighlightColor(opacity?: number): string {
+-  return `rgba(252, 176, 29, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getDividerColor(opacity?: number): string {
+-  return `rgba(255, 255, 255, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getHighlightColor(opacity?: number): string {
+-  return `rgba(252, 176, 29, ${opacity == null ? 1 : opacity})`;
+-}
+-
+-export function getTextColor(opacity?: number): string {
+-  return `rgba(255, 255, 255, ${opacity == null ? 1 : opacity})`;
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/index.native.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/index.native.tsx
+deleted file mode 100644
+index 0077e4d..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/index.native.tsx
++++ /dev/null
+@@ -1,3 +0,0 @@
+-export function withErrorOverlay(Comp: any) {
+-  return Comp;
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/index.ts b/node_modules/@expo/metro-runtime/src/error-overlay/index.ts
+new file mode 100644
+index 0000000..8815a4f
+--- /dev/null
++++ b/node_modules/@expo/metro-runtime/src/error-overlay/index.ts
+@@ -0,0 +1,7 @@
++export * from './LogBox';
++export * from './formatProjectFilePath';
++
++export function withErrorOverlay<T>(Comp: T): T {
++  return Comp;
++}
++
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/index.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/index.tsx
+deleted file mode 100644
+index 5fb6525..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/index.tsx
++++ /dev/null
+@@ -1,23 +0,0 @@
+-import React from 'react';
+-
+-if (process.env.NODE_ENV === 'development' && process.env.EXPO_OS === 'web') {
+-  // Stack traces are big with React Navigation
+-  require('./LogBox').default.install();
+-}
+-
+-export function withErrorOverlay(Comp: React.ComponentType<any>) {
+-  if (process.env.NODE_ENV === 'production') {
+-    return Comp;
+-  }
+-
+-  const { default: ErrorToastContainer } =
+-    require('./toast/ErrorToastContainer') as typeof import('./toast/ErrorToastContainer');
+-
+-  return function ErrorOverlay(props: any) {
+-    return (
+-      <ErrorToastContainer>
+-        <Comp {...props} />
+-      </ErrorToastContainer>
+-    );
+-  };
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/modules/NativeLogBox/index.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/modules/NativeLogBox/index.tsx
+deleted file mode 100644
+index 29b1846..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/modules/NativeLogBox/index.tsx
++++ /dev/null
+@@ -1,27 +0,0 @@
+-import React from 'react';
+-import ReactDOM from 'react-dom/client';
+-let currentRoot: ReactDOM.Root | null = null;
+-export default {
+-  show() {
+-    if (currentRoot) {
+-      return;
+-    }
+-    const ErrorOverlay: React.ComponentType = require('../../ErrorOverlay').default;
+-    // Create a new div with ID `error-overlay` element and render LogBoxInspector into it.
+-    const div = document.createElement('div');
+-    div.id = 'error-overlay';
+-    document.body.appendChild(div);
+-
+-    currentRoot = ReactDOM.createRoot(div);
+-    currentRoot.render(<ErrorOverlay />);
+-  },
+-  hide() {
+-    // Remove div with ID `error-overlay`
+-    if (currentRoot) {
+-      currentRoot.unmount();
+-      currentRoot = null;
+-    }
+-    const div = document.getElementById('error-overlay');
+-    div?.remove();
+-  },
+-};
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/modules/parseErrorStack/parseHermesStack.ts b/node_modules/@expo/metro-runtime/src/error-overlay/modules/parseErrorStack/parseHermesStack.ts
+deleted file mode 100644
+index 1e58b02..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/modules/parseErrorStack/parseHermesStack.ts
++++ /dev/null
+@@ -1,3 +0,0 @@
+-import parseErrorStack from 'react-native/Libraries/Core/Devtools/parseErrorStack';
+-
+-export { parseErrorStack };
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorCodeFrame.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorCodeFrame.tsx
+deleted file mode 100644
+index 66fdf14..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorCodeFrame.tsx
++++ /dev/null
+@@ -1,107 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+-
+-import { LogBoxInspectorSection } from './LogBoxInspectorSection';
+-import type { CodeFrame } from '../Data/parseLogBoxLog';
+-import { Ansi } from '../UI/AnsiHighlight';
+-import { LogBoxButton } from '../UI/LogBoxButton';
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-import { CODE_FONT } from '../UI/constants';
+-import { formatProjectFilePath } from '../formatProjectFilePath';
+-import openFileInEditor from '../modules/openFileInEditor';
+-
+-declare const process: any;
+-
+-export function LogBoxInspectorCodeFrame({ codeFrame }: { codeFrame?: CodeFrame }) {
+-  if (codeFrame == null) {
+-    return null;
+-  }
+-
+-  function getFileName() {
+-    return formatProjectFilePath(process.env.EXPO_PROJECT_ROOT, codeFrame?.fileName);
+-  }
+-
+-  function getLocation() {
+-    const location = codeFrame?.location;
+-    if (location != null) {
+-      return ` (${location.row}:${location.column + 1 /* Code frame columns are zero indexed */})`;
+-    }
+-
+-    return null;
+-  }
+-
+-  return (
+-    <LogBoxInspectorSection heading="Source">
+-      <View style={styles.box}>
+-        <View style={styles.frame}>
+-          <ScrollView
+-            horizontal
+-            contentContainerStyle={{
+-              flexDirection: 'column',
+-            }}>
+-            <Ansi style={styles.content} text={codeFrame.content} />
+-          </ScrollView>
+-        </View>
+-        <LogBoxButton
+-          backgroundColor={{
+-            default: 'transparent',
+-            pressed: LogBoxStyle.getBackgroundDarkColor(1),
+-          }}
+-          style={styles.button}
+-          onPress={() => {
+-            openFileInEditor(codeFrame.fileName, codeFrame.location?.row ?? 0);
+-          }}>
+-          <Text style={styles.fileText}>
+-            {getFileName()}
+-            {getLocation()}
+-          </Text>
+-        </LogBoxButton>
+-      </View>
+-    </LogBoxInspectorSection>
+-  );
+-}
+-
+-const styles = StyleSheet.create({
+-  box: {
+-    backgroundColor: LogBoxStyle.getBackgroundColor(),
+-    borderWidth: 1,
+-    borderColor: '#323232',
+-    marginLeft: 10,
+-    marginRight: 10,
+-    marginTop: 5,
+-    borderRadius: 3,
+-  },
+-  frame: {
+-    padding: 10,
+-    borderBottomColor: LogBoxStyle.getTextColor(0.1),
+-    borderBottomWidth: 1,
+-  },
+-  button: {
+-    paddingTop: 10,
+-    paddingBottom: 10,
+-  },
+-  content: {
+-    flexDirection: 'column',
+-    color: LogBoxStyle.getTextColor(1),
+-    fontSize: 12,
+-    includeFontPadding: false,
+-    lineHeight: 20,
+-    fontFamily: CODE_FONT,
+-  },
+-  fileText: {
+-    userSelect: 'none',
+-    color: LogBoxStyle.getTextColor(0.5),
+-    textAlign: 'center',
+-    flex: 1,
+-    fontSize: 16,
+-    includeFontPadding: false,
+-    fontFamily: CODE_FONT,
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorFooter.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorFooter.tsx
+deleted file mode 100644
+index 5ce0535..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorFooter.tsx
++++ /dev/null
+@@ -1,115 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+-
+-import { useSelectedLog } from '../Data/LogContext';
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-
+-type Props = {
+-  onDismiss: () => void;
+-  onMinimize: () => void;
+-};
+-
+-export function LogBoxInspectorFooter(props: Props) {
+-  const log = useSelectedLog();
+-
+-  if (['static', 'syntax'].includes(log.level)) {
+-    return (
+-      <View style={styles.root}>
+-        <View style={styles.button}>
+-          <Text style={styles.syntaxErrorText}>This error cannot be dismissed.</Text>
+-        </View>
+-      </View>
+-    );
+-  }
+-
+-  return (
+-    <View style={styles.root}>
+-      <FooterButton text="Dismiss" onPress={props.onDismiss} />
+-      <FooterButton text="Minimize" onPress={props.onMinimize} />
+-    </View>
+-  );
+-}
+-
+-function FooterButton({ text, onPress }: { onPress: () => void; text: string }) {
+-  return (
+-    <Pressable onPress={onPress} style={{ flex: 1 }}>
+-      {({
+-        /** @ts-expect-error: react-native types are broken. */
+-        hovered,
+-        pressed,
+-      }) => (
+-        <View
+-          style={[
+-            buttonStyles.safeArea,
+-            {
+-              // @ts-expect-error: web-only type
+-              transitionDuration: '150ms',
+-              backgroundColor: pressed
+-                ? '#323232'
+-                : hovered
+-                  ? '#111111'
+-                  : LogBoxStyle.getBackgroundColor(),
+-            },
+-          ]}>
+-          <View style={buttonStyles.content}>
+-            <Text style={buttonStyles.label}>{text}</Text>
+-          </View>
+-        </View>
+-      )}
+-    </Pressable>
+-  );
+-}
+-
+-const buttonStyles = StyleSheet.create({
+-  safeArea: {
+-    flex: 1,
+-    borderTopWidth: 1,
+-    borderColor: '#323232',
+-    // paddingBottom: DeviceInfo.getConstants().isIPhoneX_deprecated ? 30 : 0,
+-  },
+-  content: {
+-    alignItems: 'center',
+-    height: 48,
+-    justifyContent: 'center',
+-  },
+-  label: {
+-    userSelect: 'none',
+-    color: LogBoxStyle.getTextColor(1),
+-    fontSize: 14,
+-    includeFontPadding: false,
+-    lineHeight: 20,
+-  },
+-});
+-
+-const styles = StyleSheet.create({
+-  root: {
+-    backgroundColor: LogBoxStyle.getBackgroundColor(1),
+-    ...Platform.select({
+-      web: {
+-        boxShadow: `0 -2px 0 2px #000`,
+-      },
+-    }),
+-    flexDirection: 'row',
+-  },
+-  button: {
+-    flex: 1,
+-  },
+-  syntaxErrorText: {
+-    textAlign: 'center',
+-    width: '100%',
+-    height: 48,
+-    fontSize: 14,
+-    lineHeight: 20,
+-    paddingTop: 20,
+-    paddingBottom: 50,
+-    fontStyle: 'italic',
+-    color: LogBoxStyle.getTextColor(0.6),
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorHeader.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorHeader.tsx
+deleted file mode 100644
+index fb2d36d..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorHeader.tsx
++++ /dev/null
+@@ -1,167 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import { Image, Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
+-
+-import type { LogLevel } from '../Data/LogBoxLog';
+-import { useLogs } from '../Data/LogContext';
+-import { LogBoxButton } from '../UI/LogBoxButton';
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-
+-type Props = {
+-  onSelectIndex: (selectedIndex: number) => void;
+-  level: LogLevel;
+-};
+-
+-export function LogBoxInspectorHeader(props: Props) {
+-  const { selectedLogIndex: selectedIndex, logs } = useLogs();
+-  const total = logs.length;
+-
+-  if (props.level === 'syntax') {
+-    return (
+-      <View style={[styles.safeArea, styles[props.level]]}>
+-        <View style={styles.header}>
+-          <View style={styles.title}>
+-            <Text style={styles.titleText}>Failed to compile</Text>
+-          </View>
+-        </View>
+-      </View>
+-    );
+-  }
+-
+-  const prevIndex = selectedIndex - 1 < 0 ? total - 1 : selectedIndex - 1;
+-  const nextIndex = selectedIndex + 1 > total - 1 ? 0 : selectedIndex + 1;
+-
+-  const titleText = `Log ${selectedIndex + 1} of ${total}`;
+-
+-  return (
+-    <View style={[styles.safeArea, styles[props.level]]}>
+-      <View style={styles.header}>
+-        <LogBoxInspectorHeaderButton
+-          disabled={total <= 1}
+-          level={props.level}
+-          image={require('@expo/metro-runtime/assets/chevron-left.png')}
+-          onPress={() => props.onSelectIndex(prevIndex)}
+-        />
+-        <View style={styles.title}>
+-          <Text style={styles.titleText}>{titleText}</Text>
+-        </View>
+-        <LogBoxInspectorHeaderButton
+-          disabled={total <= 1}
+-          level={props.level}
+-          image={require('@expo/metro-runtime/assets/chevron-right.png')}
+-          onPress={() => props.onSelectIndex(nextIndex)}
+-        />
+-      </View>
+-    </View>
+-  );
+-}
+-
+-const backgroundForLevel = (level: LogLevel) =>
+-  ({
+-    warn: {
+-      default: 'transparent',
+-      pressed: LogBoxStyle.getWarningDarkColor(),
+-    },
+-    error: {
+-      default: 'transparent',
+-      pressed: LogBoxStyle.getErrorDarkColor(),
+-    },
+-    fatal: {
+-      default: 'transparent',
+-      pressed: LogBoxStyle.getFatalDarkColor(),
+-    },
+-    syntax: {
+-      default: 'transparent',
+-      pressed: LogBoxStyle.getFatalDarkColor(),
+-    },
+-    static: {
+-      default: 'transparent',
+-      pressed: LogBoxStyle.getFatalDarkColor(),
+-    },
+-  })[level];
+-
+-function LogBoxInspectorHeaderButton(props: {
+-  disabled: boolean;
+-  image: number;
+-  level: LogLevel;
+-  onPress?: () => void;
+-}) {
+-  return (
+-    <LogBoxButton
+-      backgroundColor={backgroundForLevel(props.level)}
+-      onPress={props.disabled ? undefined : props.onPress}
+-      style={headerStyles.button}>
+-      {props.disabled ? null : (
+-        <Image
+-          source={props.image}
+-          tintColor={LogBoxStyle.getTextColor()}
+-          style={headerStyles.buttonImage}
+-        />
+-      )}
+-    </LogBoxButton>
+-  );
+-}
+-
+-const headerStyles = StyleSheet.create({
+-  button: {
+-    alignItems: 'center',
+-    justifyContent: 'center',
+-    aspectRatio: 1,
+-    marginRight: 6,
+-    marginLeft: 6,
+-    borderRadius: 3,
+-  },
+-  buttonImage: {
+-    height: 14,
+-    width: 8,
+-  },
+-});
+-
+-const styles = StyleSheet.create({
+-  syntax: {
+-    backgroundColor: LogBoxStyle.getFatalColor(),
+-  },
+-  static: {
+-    backgroundColor: LogBoxStyle.getFatalColor(),
+-  },
+-  fatal: {
+-    backgroundColor: LogBoxStyle.getFatalColor(),
+-  },
+-  warn: {
+-    backgroundColor: LogBoxStyle.getWarningColor(),
+-  },
+-  error: {
+-    backgroundColor: LogBoxStyle.getErrorColor(),
+-  },
+-  header: {
+-    flexDirection: 'row',
+-    alignItems: 'center',
+-
+-    paddingHorizontal: 8,
+-    height: Platform.select({
+-      default: 48,
+-      ios: 44,
+-    }),
+-  },
+-  title: {
+-    alignItems: 'center',
+-    flex: 1,
+-    justifyContent: 'center',
+-  },
+-  titleText: {
+-    color: LogBoxStyle.getTextColor(),
+-    fontSize: 16,
+-    fontWeight: '600',
+-    includeFontPadding: false,
+-    lineHeight: 20,
+-  },
+-  safeArea: {
+-    paddingTop: process.env.EXPO_OS !== 'ios' ? StatusBar.currentHeight : 40,
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorMessageHeader.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorMessageHeader.tsx
+deleted file mode 100644
+index 18e91b4..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorMessageHeader.tsx
++++ /dev/null
+@@ -1,122 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import { Platform, StyleSheet, Text, View } from 'react-native';
+-
+-import type { LogLevel } from '../Data/LogBoxLog';
+-import type { Message } from '../Data/parseLogBoxLog';
+-import { LogBoxMessage } from '../UI/LogBoxMessage';
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-
+-type Props = {
+-  collapsed: boolean;
+-  message: Message;
+-  level: LogLevel;
+-  title: string;
+-  onPress: () => void;
+-};
+-
+-const SHOW_MORE_MESSAGE_LENGTH = 300;
+-
+-function ShowMoreButton({
+-  message,
+-  collapsed,
+-  onPress,
+-}: Pick<Props, 'collapsed' | 'message' | 'onPress'>) {
+-  if (message.content.length < SHOW_MORE_MESSAGE_LENGTH || !collapsed) {
+-    return null;
+-  }
+-  return (
+-    <Text style={styles.collapse} onPress={onPress}>
+-      ... See More
+-    </Text>
+-  );
+-}
+-
+-export function LogBoxInspectorMessageHeader(props: Props) {
+-  return (
+-    <View style={styles.body}>
+-      <View style={styles.heading}>
+-        <Text testID="logbox_title" style={[styles.headingText, styles[props.level]]}>
+-          {props.title}
+-        </Text>
+-      </View>
+-      <Text style={styles.bodyText}>
+-        <LogBoxMessage
+-          maxLength={props.collapsed ? SHOW_MORE_MESSAGE_LENGTH : Infinity}
+-          message={props.message}
+-          style={styles.messageText}
+-        />
+-        <ShowMoreButton {...props} />
+-      </Text>
+-    </View>
+-  );
+-}
+-
+-const styles = StyleSheet.create({
+-  body: {
+-    backgroundColor: LogBoxStyle.getBackgroundColor(1),
+-    ...Platform.select({
+-      web: {
+-        boxShadow: `0 2px 0 2px #00000080`,
+-      },
+-    }),
+-  },
+-  bodyText: {
+-    color: LogBoxStyle.getTextColor(1),
+-    fontSize: 14,
+-    includeFontPadding: false,
+-    lineHeight: 20,
+-    fontWeight: '500',
+-    paddingHorizontal: 12,
+-    paddingBottom: 10,
+-  },
+-  heading: {
+-    alignItems: 'center',
+-    flexDirection: 'row',
+-    paddingHorizontal: 12,
+-    marginTop: 10,
+-    marginBottom: 5,
+-  },
+-  headingText: {
+-    flex: 1,
+-    fontSize: 20,
+-    fontWeight: '600',
+-    includeFontPadding: false,
+-    lineHeight: 28,
+-  },
+-  warn: {
+-    color: LogBoxStyle.getWarningColor(1),
+-  },
+-  error: {
+-    color: LogBoxStyle.getErrorColor(1),
+-  },
+-  fatal: {
+-    color: LogBoxStyle.getFatalColor(1),
+-  },
+-  syntax: {
+-    color: LogBoxStyle.getFatalColor(1),
+-  },
+-  static: {
+-    color: LogBoxStyle.getFatalColor(1),
+-  },
+-  messageText: {
+-    color: LogBoxStyle.getTextColor(0.6),
+-  },
+-  collapse: {
+-    color: LogBoxStyle.getTextColor(0.7),
+-    fontSize: 14,
+-    fontWeight: '300',
+-    lineHeight: 12,
+-  },
+-  button: {
+-    paddingVertical: 5,
+-    paddingHorizontal: 10,
+-    borderRadius: 3,
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorSection.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorSection.tsx
+deleted file mode 100644
+index f670d45..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorSection.tsx
++++ /dev/null
+@@ -1,52 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import { StyleSheet, Text, View } from 'react-native';
+-
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-
+-type Props = {
+-  heading: string;
+-  children: React.ReactNode;
+-  action?: any;
+-};
+-
+-export function LogBoxInspectorSection(props: Props) {
+-  return (
+-    <View style={styles.section}>
+-      <View style={styles.heading}>
+-        <Text style={styles.headingText}>{props.heading}</Text>
+-        {props.action}
+-      </View>
+-      <View style={styles.body}>{props.children}</View>
+-    </View>
+-  );
+-}
+-
+-const styles = StyleSheet.create({
+-  section: {
+-    marginTop: 15,
+-  },
+-  heading: {
+-    alignItems: 'center',
+-    flexDirection: 'row',
+-    paddingHorizontal: 12,
+-    marginBottom: 10,
+-  },
+-  headingText: {
+-    color: LogBoxStyle.getTextColor(1),
+-    flex: 1,
+-    fontSize: 18,
+-    fontWeight: '600',
+-    includeFontPadding: false,
+-    lineHeight: 20,
+-  },
+-  body: {
+-    paddingBottom: 10,
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorSourceMapStatus.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorSourceMapStatus.tsx
+deleted file mode 100644
+index a522d79..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorSourceMapStatus.tsx
++++ /dev/null
+@@ -1,129 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-
+-'use client';
+-
+-import React, { useEffect, useState } from 'react';
+-import { Animated, Easing, StyleSheet, Text } from 'react-native';
+-import type { GestureResponderEvent } from 'react-native';
+-
+-import { LogBoxButton } from '../UI/LogBoxButton';
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-
+-type Props = {
+-  onPress?: ((event: GestureResponderEvent) => void) | null;
+-  status: 'COMPLETE' | 'FAILED' | 'NONE' | 'PENDING';
+-};
+-
+-export function LogBoxInspectorSourceMapStatus(props: Props) {
+-  const [state, setState] = useState<{
+-    animation: null | Animated.CompositeAnimation;
+-    rotate: null | Animated.AnimatedInterpolation<string>;
+-  }>({
+-    animation: null,
+-    rotate: null,
+-  });
+-
+-  useEffect(() => {
+-    if (props.status === 'PENDING') {
+-      if (state.animation == null) {
+-        const animated = new Animated.Value(0);
+-        const animation = Animated.loop(
+-          Animated.timing(animated, {
+-            duration: 2000,
+-            easing: Easing.linear,
+-            toValue: 1,
+-            useNativeDriver: true,
+-          })
+-        );
+-        setState({
+-          animation,
+-          rotate: animated.interpolate({
+-            inputRange: [0, 1],
+-            outputRange: ['0deg', '360deg'],
+-          }),
+-        });
+-        animation.start();
+-      }
+-    } else {
+-      if (state.animation != null) {
+-        state.animation.stop();
+-        setState({
+-          animation: null,
+-          rotate: null,
+-        });
+-      }
+-    }
+-
+-    return () => {
+-      if (state.animation != null) {
+-        state.animation.stop();
+-      }
+-    };
+-  }, [props.status, state.animation]);
+-
+-  let image;
+-  let color;
+-  switch (props.status) {
+-    case 'FAILED':
+-      image = require('@expo/metro-runtime/assets/alert-triangle.png');
+-      color = LogBoxStyle.getErrorColor(1);
+-      break;
+-    case 'PENDING':
+-      image = require('@expo/metro-runtime/assets/loader.png');
+-      color = LogBoxStyle.getWarningColor(1);
+-      break;
+-  }
+-
+-  if (props.status === 'COMPLETE' || image == null) {
+-    return null;
+-  }
+-
+-  return (
+-    <LogBoxButton
+-      backgroundColor={{
+-        default: 'transparent',
+-        pressed: LogBoxStyle.getBackgroundColor(1),
+-      }}
+-      hitSlop={{ bottom: 8, left: 8, right: 8, top: 8 }}
+-      onPress={props.onPress}
+-      style={styles.root}>
+-      <Animated.Image
+-        source={image}
+-        tintColor={color ?? LogBoxStyle.getTextColor(0.4)}
+-        style={[
+-          styles.image,
+-          state.rotate == null || props.status !== 'PENDING'
+-            ? null
+-            : { transform: [{ rotate: state.rotate }] },
+-        ]}
+-      />
+-      <Text style={[styles.text, { color }]}>Source Map</Text>
+-    </LogBoxButton>
+-  );
+-}
+-
+-const styles = StyleSheet.create({
+-  root: {
+-    alignItems: 'center',
+-    borderRadius: 12,
+-    flexDirection: 'row',
+-    height: 24,
+-    paddingHorizontal: 8,
+-  },
+-  image: {
+-    height: 14,
+-    width: 16,
+-    marginEnd: 4,
+-  },
+-  text: {
+-    fontSize: 12,
+-    includeFontPadding: false,
+-    lineHeight: 16,
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorStackFrame.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorStackFrame.tsx
+deleted file mode 100644
+index e3125b6..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorStackFrame.tsx
++++ /dev/null
+@@ -1,90 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React from 'react';
+-import { StyleSheet, Text, View } from 'react-native';
+-import type { GestureResponderEvent } from 'react-native';
+-import { StackFrame } from 'stacktrace-parser';
+-
+-import { LogBoxButton } from '../UI/LogBoxButton';
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-import { CODE_FONT } from '../UI/constants';
+-import { getStackFormattedLocation } from '../formatProjectFilePath';
+-
+-declare const process: any;
+-
+-type Props = {
+-  frame: StackFrame & { collapse?: boolean };
+-  onPress?: (event: GestureResponderEvent) => void;
+-};
+-
+-export function LogBoxInspectorStackFrame(props: Props) {
+-  const { frame, onPress } = props;
+-  const location = getStackFormattedLocation(process.env.EXPO_PROJECT_ROOT, frame);
+-  return (
+-    <View style={styles.frameContainer}>
+-      <LogBoxButton
+-        backgroundColor={{
+-          default: 'transparent',
+-          pressed: onPress ? LogBoxStyle.getBackgroundColor(1) : 'transparent',
+-        }}
+-        onPress={onPress}
+-        style={styles.frame}>
+-        <Text style={[styles.name, frame.collapse === true && styles.dim]}>{frame.methodName}</Text>
+-        <Text
+-          ellipsizeMode="middle"
+-          numberOfLines={1}
+-          style={[styles.location, frame.collapse === true && styles.dim]}>
+-          {location}
+-        </Text>
+-      </LogBoxButton>
+-    </View>
+-  );
+-}
+-
+-const styles = StyleSheet.create({
+-  frameContainer: {
+-    flexDirection: 'row',
+-    paddingHorizontal: 15,
+-  },
+-  frame: {
+-    flex: 1,
+-    paddingVertical: 4,
+-    paddingHorizontal: 10,
+-    borderRadius: 5,
+-  },
+-  lineLocation: {
+-    flexDirection: 'row',
+-  },
+-  name: {
+-    color: LogBoxStyle.getTextColor(1),
+-    fontSize: 14,
+-    includeFontPadding: false,
+-    lineHeight: 18,
+-    fontWeight: '400',
+-    fontFamily: CODE_FONT,
+-  },
+-  location: {
+-    color: LogBoxStyle.getTextColor(0.8),
+-    fontSize: 12,
+-    fontWeight: '300',
+-    includeFontPadding: false,
+-    lineHeight: 16,
+-    paddingLeft: 10,
+-  },
+-  dim: {
+-    color: LogBoxStyle.getTextColor(0.4),
+-    fontWeight: '300',
+-  },
+-  line: {
+-    color: LogBoxStyle.getTextColor(0.8),
+-    fontSize: 12,
+-    fontWeight: '300',
+-    includeFontPadding: false,
+-    lineHeight: 16,
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorStackFrames.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorStackFrames.tsx
+deleted file mode 100644
+index 63402c3..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/overlay/LogBoxInspectorStackFrames.tsx
++++ /dev/null
+@@ -1,201 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React, { useState } from 'react';
+-import { StyleSheet, Text, View } from 'react-native';
+-
+-import { LogBoxInspectorSection } from './LogBoxInspectorSection';
+-import { LogBoxInspectorSourceMapStatus } from './LogBoxInspectorSourceMapStatus';
+-import { LogBoxInspectorStackFrame } from './LogBoxInspectorStackFrame';
+-import type { StackType } from '../Data/LogBoxLog';
+-import type { Stack } from '../Data/LogBoxSymbolication';
+-import { useSelectedLog } from '../Data/LogContext';
+-import { LogBoxButton } from '../UI/LogBoxButton';
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-import openFileInEditor from '../modules/openFileInEditor';
+-
+-type Props = {
+-  type: StackType;
+-  onRetry: () => void;
+-};
+-
+-export function getCollapseMessage(stackFrames: Stack, collapsed: boolean): string {
+-  if (stackFrames.length === 0) {
+-    return 'No frames to show';
+-  }
+-
+-  const collapsedCount = stackFrames.reduce((count, { collapse }) => {
+-    if (collapse === true) {
+-      return count + 1;
+-    }
+-
+-    return count;
+-  }, 0);
+-
+-  if (collapsedCount === 0) {
+-    return 'Showing all frames';
+-  }
+-
+-  const framePlural = `frame${collapsedCount > 1 ? 's' : ''}`;
+-  if (collapsedCount === stackFrames.length) {
+-    return collapsed
+-      ? `See${collapsedCount > 1 ? ' all ' : ' '}${collapsedCount} collapsed ${framePlural}`
+-      : `Collapse${collapsedCount > 1 ? ' all ' : ' '}${collapsedCount} ${framePlural}`;
+-  } else {
+-    return collapsed
+-      ? `See ${collapsedCount} more ${framePlural}`
+-      : `Collapse ${collapsedCount} ${framePlural}`;
+-  }
+-}
+-
+-export function LogBoxInspectorStackFrames({ onRetry, type }: Props) {
+-  const log = useSelectedLog();
+-
+-  const [collapsed, setCollapsed] = useState(() => {
+-    // Only collapse frames initially if some frames are not collapsed.
+-    return log.getAvailableStack(type)?.some(({ collapse }) => !collapse);
+-  });
+-
+-  function getStackList() {
+-    if (collapsed === true) {
+-      return log.getAvailableStack(type)?.filter(({ collapse }) => !collapse);
+-    } else {
+-      return log.getAvailableStack(type);
+-    }
+-  }
+-
+-  if (log.getAvailableStack(type)?.length === 0) {
+-    return null;
+-  }
+-
+-  return (
+-    <LogBoxInspectorSection
+-      heading={type === 'component' ? 'Component Stack' : 'Call Stack'}
+-      action={
+-        <LogBoxInspectorSourceMapStatus
+-          onPress={log.symbolicated[type].status === 'FAILED' ? onRetry : null}
+-          status={log.symbolicated[type].status}
+-        />
+-      }>
+-      {log.symbolicated[type].status !== 'COMPLETE' && (
+-        <View style={stackStyles.hintBox}>
+-          <Text style={stackStyles.hintText}>
+-            This call stack is not symbolicated. Some features are unavailable such as viewing the
+-            function name or tapping to open files.
+-          </Text>
+-        </View>
+-      )}
+-      <StackFrameList list={getStackList()!} status={log.symbolicated[type].status} />
+-      <StackFrameFooter
+-        onPress={() => setCollapsed(!collapsed)}
+-        message={getCollapseMessage(log.getAvailableStack(type)!, !!collapsed)}
+-      />
+-    </LogBoxInspectorSection>
+-  );
+-}
+-
+-function StackFrameList({
+-  list,
+-  status,
+-}: {
+-  list: Stack;
+-  status: 'NONE' | 'PENDING' | 'COMPLETE' | 'FAILED';
+-}): any {
+-  return list.map((frame, index) => {
+-    const { file, lineNumber } = frame;
+-    return (
+-      <LogBoxInspectorStackFrame
+-        key={index}
+-        frame={frame}
+-        onPress={
+-          status === 'COMPLETE' && file != null && lineNumber != null
+-            ? () => openFileInEditor(file, lineNumber)
+-            : undefined
+-        }
+-      />
+-    );
+-  });
+-}
+-
+-function StackFrameFooter({ message, onPress }: { message: string; onPress: () => void }) {
+-  return (
+-    <View style={stackStyles.collapseContainer}>
+-      <LogBoxButton
+-        backgroundColor={{
+-          default: 'transparent',
+-          pressed: LogBoxStyle.getBackgroundColor(1),
+-        }}
+-        onPress={onPress}
+-        style={stackStyles.collapseButton}>
+-        <Text style={stackStyles.collapse}>{message}</Text>
+-      </LogBoxButton>
+-    </View>
+-  );
+-}
+-
+-const stackStyles = StyleSheet.create({
+-  section: {
+-    marginTop: 15,
+-  },
+-  heading: {
+-    alignItems: 'center',
+-    flexDirection: 'row',
+-    paddingHorizontal: 12,
+-    marginBottom: 10,
+-  },
+-  headingText: {
+-    color: LogBoxStyle.getTextColor(1),
+-    flex: 1,
+-    fontSize: 20,
+-    fontWeight: '600',
+-    includeFontPadding: false,
+-    lineHeight: 20,
+-  },
+-  body: {
+-    paddingBottom: 10,
+-  },
+-  bodyText: {
+-    color: LogBoxStyle.getTextColor(1),
+-    fontSize: 14,
+-    includeFontPadding: false,
+-    lineHeight: 18,
+-    fontWeight: '500',
+-    paddingHorizontal: 27,
+-  },
+-  hintText: {
+-    color: LogBoxStyle.getTextColor(0.7),
+-    fontSize: 13,
+-    includeFontPadding: false,
+-    lineHeight: 18,
+-    fontWeight: '400',
+-    marginHorizontal: 10,
+-  },
+-  hintBox: {
+-    backgroundColor: LogBoxStyle.getBackgroundColor(),
+-    marginHorizontal: 10,
+-    paddingHorizontal: 5,
+-    paddingVertical: 10,
+-    borderRadius: 5,
+-    marginBottom: 5,
+-  },
+-  collapseContainer: {
+-    marginLeft: 15,
+-    flexDirection: 'row',
+-  },
+-  collapseButton: {
+-    borderRadius: 5,
+-  },
+-  collapse: {
+-    color: LogBoxStyle.getTextColor(0.7),
+-    fontSize: 12,
+-    fontWeight: '300',
+-    lineHeight: 20,
+-    marginTop: 0,
+-    paddingHorizontal: 10,
+-    paddingVertical: 5,
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToast.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToast.tsx
+deleted file mode 100644
+index 87a0c8b..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToast.tsx
++++ /dev/null
+@@ -1,171 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React, { useEffect } from 'react';
+-import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+-
+-import { ErrorToastMessage } from './ErrorToastMessage';
+-import * as LogBoxData from '../Data/LogBoxData';
+-import { LogBoxLog } from '../Data/LogBoxLog';
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-
+-type Props = {
+-  log: LogBoxLog;
+-  totalLogCount: number;
+-  level: 'warn' | 'error';
+-  onPressOpen: () => void;
+-  onPressDismiss: () => void;
+-};
+-
+-function useSymbolicatedLog(log: LogBoxLog) {
+-  // Eagerly symbolicate so the stack is available when pressing to inspect.
+-  useEffect(() => {
+-    LogBoxData.symbolicateLogLazy('stack', log);
+-    LogBoxData.symbolicateLogLazy('component', log);
+-  }, [log]);
+-}
+-
+-export function ErrorToast(props: Props) {
+-  const { totalLogCount, level, log } = props;
+-
+-  useSymbolicatedLog(log);
+-
+-  return (
+-    <View style={toastStyles.container}>
+-      <Pressable style={{ flex: 1 }} onPress={props.onPressOpen}>
+-        {({
+-          /** @ts-expect-error: react-native types are broken. */
+-          hovered,
+-          pressed,
+-        }) => (
+-          <View
+-            style={[
+-              toastStyles.press,
+-              {
+-                // @ts-expect-error: web-only type
+-                transitionDuration: '150ms',
+-                backgroundColor: pressed
+-                  ? '#323232'
+-                  : hovered
+-                    ? '#111111'
+-                    : LogBoxStyle.getBackgroundColor(),
+-              },
+-            ]}>
+-            <Count count={totalLogCount} level={level} />
+-            <ErrorToastMessage message={log.message} />
+-            <Dismiss onPress={props.onPressDismiss} />
+-          </View>
+-        )}
+-      </Pressable>
+-    </View>
+-  );
+-}
+-
+-function Count({ count, level }: { count: number; level: Props['level'] }) {
+-  return (
+-    <View style={[countStyles.inside, countStyles[level]]}>
+-      <Text style={countStyles.text}>{count <= 1 ? '!' : count}</Text>
+-    </View>
+-  );
+-}
+-
+-function Dismiss({ onPress }: { onPress: () => void }) {
+-  return (
+-    <Pressable
+-      style={{
+-        marginLeft: 5,
+-      }}
+-      hitSlop={{
+-        top: 12,
+-        right: 10,
+-        bottom: 12,
+-        left: 10,
+-      }}
+-      onPress={onPress}>
+-      {({
+-        /** @ts-expect-error: react-native types are broken. */
+-        hovered,
+-        pressed,
+-      }) => (
+-        <View
+-          style={[dismissStyles.press, hovered && { opacity: 0.8 }, pressed && { opacity: 0.5 }]}>
+-          <Image
+-            source={require('@expo/metro-runtime/assets/close.png')}
+-            style={dismissStyles.image}
+-          />
+-        </View>
+-      )}
+-    </Pressable>
+-  );
+-}
+-
+-const countStyles = StyleSheet.create({
+-  warn: {
+-    backgroundColor: LogBoxStyle.getWarningColor(1),
+-  },
+-  error: {
+-    backgroundColor: LogBoxStyle.getErrorColor(1),
+-  },
+-  log: {
+-    backgroundColor: LogBoxStyle.getLogColor(1),
+-  },
+-  inside: {
+-    marginRight: 8,
+-    minWidth: 22,
+-    aspectRatio: 1,
+-    paddingHorizontal: 4,
+-    borderRadius: 11,
+-    justifyContent: 'center',
+-    alignItems: 'center',
+-  },
+-  text: {
+-    color: LogBoxStyle.getTextColor(1),
+-    fontSize: 14,
+-    lineHeight: 18,
+-    textAlign: 'center',
+-    fontWeight: '600',
+-    ...Platform.select({
+-      web: {
+-        textShadow: `0px 0px 3px ${LogBoxStyle.getBackgroundColor(0.8)}`,
+-      },
+-    }),
+-  },
+-});
+-
+-const dismissStyles = StyleSheet.create({
+-  press: {
+-    backgroundColor: '#323232',
+-    height: 20,
+-    width: 20,
+-    borderRadius: 25,
+-    alignItems: 'center',
+-    justifyContent: 'center',
+-  },
+-  image: {
+-    height: 8,
+-    width: 8,
+-  },
+-});
+-
+-const toastStyles = StyleSheet.create({
+-  container: {
+-    height: 48,
+-    justifyContent: 'center',
+-    marginBottom: 4,
+-  },
+-  press: {
+-    borderWidth: 1,
+-    borderRadius: 8,
+-    overflow: 'hidden',
+-    flexDirection: 'row',
+-    alignItems: 'center',
+-    borderColor: '#323232',
+-    backgroundColor: LogBoxStyle.getBackgroundColor(),
+-    flex: 1,
+-    paddingHorizontal: 12,
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToastContainer.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToastContainer.tsx
+deleted file mode 100644
+index 75bd6f8..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToastContainer.tsx
++++ /dev/null
+@@ -1,9 +0,0 @@
+-import React from 'react';
+-
+-export default function ErrorToastContainer({
+-  children,
+-}: {
+-  children: React.ReactNode;
+-}): React.ReactElement {
+-  return <>{children}</>;
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToastContainer.web.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToastContainer.web.tsx
+deleted file mode 100644
+index 73c1eed..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToastContainer.web.tsx
++++ /dev/null
+@@ -1,92 +0,0 @@
+-/**
+- * Copyright (c) 650 Industries.
+- * Copyright (c) Meta Platforms, Inc. and affiliates.
+- *
+- * This source code is licensed under the MIT license found in the
+- * LICENSE file in the root directory of this source tree.
+- */
+-import React, { useCallback, useMemo } from 'react';
+-import { StyleSheet, View } from 'react-native';
+-
+-import { ErrorToast } from './ErrorToast';
+-import * as LogBoxData from '../Data/LogBoxData';
+-import { LogBoxLog } from '../Data/LogBoxLog';
+-import { useLogs } from '../Data/LogContext';
+-import { useRejectionHandler } from '../useRejectionHandler';
+-
+-export function ErrorToastContainer() {
+-  useRejectionHandler();
+-  const { logs, isDisabled } = useLogs();
+-  if (!logs.length || isDisabled) {
+-    return null;
+-  }
+-  return <ErrorToastStack logs={logs} />;
+-}
+-
+-function ErrorToastStack({ logs }: { logs: LogBoxLog[] }) {
+-  const onDismissWarns = useCallback(() => {
+-    LogBoxData.clearWarnings();
+-  }, []);
+-
+-  const onDismissErrors = useCallback(() => {
+-    LogBoxData.clearErrors();
+-  }, []);
+-
+-  const setSelectedLog = useCallback((index: number): void => {
+-    LogBoxData.setSelectedLog(index);
+-  }, []);
+-
+-  function openLog(log: LogBoxLog) {
+-    let index = logs.length - 1;
+-
+-    // Stop at zero because if we don't find any log, we'll open the first log.
+-    while (index > 0 && logs[index] !== log) {
+-      index -= 1;
+-    }
+-    setSelectedLog(index);
+-  }
+-
+-  const warnings = useMemo(() => logs.filter((log) => log.level === 'warn'), [logs]);
+-
+-  const errors = useMemo(
+-    () => logs.filter((log) => log.level === 'error' || log.level === 'fatal'),
+-    [logs]
+-  );
+-
+-  return (
+-    <View style={styles.list}>
+-      {warnings.length > 0 && (
+-        <ErrorToast
+-          log={warnings[warnings.length - 1]}
+-          level="warn"
+-          totalLogCount={warnings.length}
+-          onPressOpen={() => openLog(warnings[warnings.length - 1])}
+-          onPressDismiss={onDismissWarns}
+-        />
+-      )}
+-
+-      {errors.length > 0 && (
+-        <ErrorToast
+-          log={errors[errors.length - 1]}
+-          level="error"
+-          totalLogCount={errors.length}
+-          onPressOpen={() => openLog(errors[errors.length - 1])}
+-          onPressDismiss={onDismissErrors}
+-        />
+-      )}
+-    </View>
+-  );
+-}
+-
+-const styles = StyleSheet.create({
+-  list: {
+-    bottom: 6,
+-    left: 10,
+-    right: 10,
+-    maxWidth: 320,
+-    // @ts-expect-error
+-    position: 'fixed',
+-  },
+-});
+-
+-export default LogBoxData.withSubscription(ErrorToastContainer);
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToastMessage.tsx b/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToastMessage.tsx
+deleted file mode 100644
+index ce9cd84..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/toast/ErrorToastMessage.tsx
++++ /dev/null
+@@ -1,28 +0,0 @@
+-import React from 'react';
+-import { StyleSheet, Text } from 'react-native';
+-
+-import type { Message as MessageType } from '../Data/parseLogBoxLog';
+-import { LogBoxMessage } from '../UI/LogBoxMessage';
+-import * as LogBoxStyle from '../UI/LogBoxStyle';
+-
+-export function ErrorToastMessage({ message }: { message?: MessageType }) {
+-  return (
+-    <Text numberOfLines={1} style={styles.text}>
+-      {message && <LogBoxMessage plaintext message={message} style={styles.substitutionText} />}
+-    </Text>
+-  );
+-}
+-
+-const styles = StyleSheet.create({
+-  text: {
+-    userSelect: 'none',
+-    paddingLeft: 8,
+-    color: LogBoxStyle.getTextColor(1),
+-    flex: 1,
+-    fontSize: 14,
+-    lineHeight: 22,
+-  },
+-  substitutionText: {
+-    color: LogBoxStyle.getTextColor(0.6),
+-  },
+-});
+diff --git a/node_modules/@expo/metro-runtime/src/error-overlay/useRejectionHandler.ts b/node_modules/@expo/metro-runtime/src/error-overlay/useRejectionHandler.ts
+deleted file mode 100644
+index ffd08af..0000000
+--- a/node_modules/@expo/metro-runtime/src/error-overlay/useRejectionHandler.ts
++++ /dev/null
+@@ -1,61 +0,0 @@
+-import React from 'react';
+-
+-import ExceptionsManager from './modules/ExceptionsManager';
+-
+-function useStackTraceLimit(limit: number) {
+-  const current = React.useRef(0);
+-  React.useEffect(() => {
+-    try {
+-      // @ts-expect-error: StackTraceLimit is not defined in the Error type
+-      const currentLimit = Error.stackTraceLimit;
+-      // @ts-expect-error: StackTraceLimit is not defined in the Error type
+-      Error.stackTraceLimit = limit;
+-      current.current = currentLimit;
+-    } catch {}
+-    return () => {
+-      try {
+-        // @ts-expect-error: StackTraceLimit is not defined in the Error type
+-        Error.stackTraceLimit = current.current;
+-      } catch {}
+-    };
+-  }, [limit]);
+-}
+-
+-export function useRejectionHandler() {
+-  const hasError = React.useRef(false);
+-
+-  useStackTraceLimit(35);
+-
+-  React.useEffect(() => {
+-    function onUnhandledError(ev: ErrorEvent) {
+-      hasError.current = true;
+-
+-      const error = ev?.error;
+-      if (!error || !(error instanceof Error) || typeof error.stack !== 'string') {
+-        return;
+-      }
+-
+-      ExceptionsManager.handleException(error);
+-    }
+-
+-    function onUnhandledRejection(ev: PromiseRejectionEvent) {
+-      hasError.current = true;
+-
+-      const reason = ev?.reason;
+-      if (!reason || !(reason instanceof Error) || typeof reason.stack !== 'string') {
+-        return;
+-      }
+-
+-      ExceptionsManager.handleException(reason);
+-    }
+-
+-    window.addEventListener('unhandledrejection', onUnhandledRejection);
+-    window.addEventListener('error', onUnhandledError);
+-    return () => {
+-      window.removeEventListener('error', onUnhandledError);
+-      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+-    };
+-  }, []);
+-
+-  return hasError;
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/metroServerLogs.native.ts b/node_modules/@expo/metro-runtime/src/metroServerLogs.native.ts
+deleted file mode 100644
+index f7cd30c..0000000
+--- a/node_modules/@expo/metro-runtime/src/metroServerLogs.native.ts
++++ /dev/null
+@@ -1,107 +0,0 @@
+-import React from 'react';
+-
+-const HMRClient = require('react-native/Libraries/Utilities/HMRClient').default;
+-
+-type ReactWithOwnerStack = typeof React & {
+-  captureOwnerStack?: () => string | null;
+-};
+-const captureOwnerStack = (React as ReactWithOwnerStack).captureOwnerStack;
+-
+-export function captureStackForServerLogs() {
+-  const HMRClientLogOriginal = HMRClient.log;
+-
+-  HMRClient.log = (level: string, data: unknown[]) => {
+-    // NOTE: Should we print stack trace for warnings as well?
+-    if (![/*'warn',*/ 'error'].includes(level)) {
+-      // If the log level is not warn or error, we don't need to capture the stack trace.
+-      return HMRClientLogOriginal.apply(HMRClient, [level, data]);
+-    }
+-
+-    const preventSymbolication = data.some(
+-      (item) => hasBooleanKey(item, 'preventSymbolication') && item.preventSymbolication
+-    );
+-    if (preventSymbolication) {
+-      // NOTE(krystofwoldrich): Although a generic flag, it's only used for compilation errors for which symbolication will fail.
+-      // If the error would be send back to metro it would be printed multiple times, once by Metro and once from here.
+-      // https://github.com/facebook/react-native/blob/a8bc74c0099252cb1d11ad3b80f3deac71dcc0d5/packages/react-native/Libraries/Utilities/HMRClient.js#L367
+-      return;
+-    }
+-
+-    const hasErrorLikeStack = data.some((item) => hasStringKey(item, 'stack'));
+-    const hasComponentStack = data.some(
+-      (item) =>
+-        (typeof item === 'string' && isComponentStack(withoutANSIColorStyles(item))) ||
+-        (hasStringKey(item, 'message') && isComponentStack(withoutANSIColorStyles(item.message)))
+-    );
+-
+-    // This is not an Expo error. It's used only to capture the stack trace of the log call.
+-    // If you see this, look higher in the stack to find the actual cause.
+-    const syntheticStack = hasErrorLikeStack ? undefined : captureCurrentStack();
+-    const componentStack = hasComponentStack ? undefined : captureOwnerStack?.();
+-
+-    const dataWithStack = [...data];
+-    if (syntheticStack) {
+-      dataWithStack.push(syntheticStack);
+-    } else {
+-      data.forEach((item) => {
+-        if (hasStringKey(item, 'stack')) {
+-          // We have to explicitly push the stack to the data array
+-          // because otherwise it will be lost by `pretty-format`.
+-          // TODO: Remove message from the stack to avoid duplication (message from `pretty-format` and from our added stack).
+-          dataWithStack.push(item.stack);
+-        }
+-      });
+-    }
+-    if (componentStack) {
+-      dataWithStack.push(componentStack);
+-    }
+-
+-    HMRClientLogOriginal.apply(HMRClient, [level, dataWithStack]);
+-  };
+-}
+-
+-// Based on https://github.com/facebook/react-native/blob/a8bc74c0099252cb1d11ad3b80f3deac71dcc0d5/packages/react-native/Libraries/LogBox/Data/parseLogBoxLog.js#L447
+-function withoutANSIColorStyles(message: string): string {
+-  return message.replace(
+-    // eslint-disable-next-line no-control-regex
+-    /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+-    ''
+-  );
+-}
+-
+-// Based on https://github.com/facebook/react-native/blob/a8bc74c0099252cb1d11ad3b80f3deac71dcc0d5/packages/react-native/Libraries/LogBox/Data/parseLogBoxLog.js#L214
+-const RE_COMPONENT_STACK_LINE_OLD = / {4}in/;
+-const RE_COMPONENT_STACK_LINE_NEW = / {4}at/;
+-const RE_COMPONENT_STACK_LINE_STACK_FRAME = /@.*\n/;
+-function isComponentStack(consoleArgument: string) {
+-  const isOldComponentStackFormat = RE_COMPONENT_STACK_LINE_OLD.test(consoleArgument);
+-  const isNewComponentStackFormat = RE_COMPONENT_STACK_LINE_NEW.test(consoleArgument);
+-  const isNewJSCComponentStackFormat = RE_COMPONENT_STACK_LINE_STACK_FRAME.test(consoleArgument);
+-
+-  return isOldComponentStackFormat || isNewComponentStackFormat || isNewJSCComponentStackFormat;
+-}
+-
+-function hasStringKey(obj: unknown, key: string): obj is { [key: string]: string } {
+-  return (
+-    typeof obj === 'object' &&
+-    obj !== null &&
+-    key in obj &&
+-    typeof (obj as Record<string, unknown>)[key] === 'string'
+-  );
+-}
+-
+-function hasBooleanKey(obj: unknown, key: string): obj is { [key: string]: boolean } {
+-  return (
+-    typeof obj === 'object' &&
+-    obj !== null &&
+-    key in obj &&
+-    typeof (obj as Record<string, unknown>)[key] === 'boolean'
+-  );
+-}
+-
+-class NamelessError extends Error {
+-  name = '';
+-}
+-function captureCurrentStack() {
+-  return new NamelessError().stack;
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/metroServerLogs.ts b/node_modules/@expo/metro-runtime/src/metroServerLogs.ts
+index 40a2d3f..4fa1c9e 100644
+--- a/node_modules/@expo/metro-runtime/src/metroServerLogs.ts
++++ b/node_modules/@expo/metro-runtime/src/metroServerLogs.ts
+@@ -1 +1,12 @@
+-export function captureStackForServerLogs() {}
++/**
++ * This file is required by `src/index.ts` in some @expo/metro-runtime releases.
++ *
++ * In this repo, the published package version (6.1.2) ships `src/index.ts` that
++ * `require()`s `./metroServerLogs`, but the file is missing from `src/`.
++ * We provide a safe no-op implementation so Metro can bundle and Expo can start.
++ */
++
++export function captureStackForServerLogs(): void {
++  // No-op fallback. Expo will still run; this only affects improved server log stacks.
++}
++
+diff --git a/node_modules/@expo/metro-runtime/src/promiseRejectionTracking.native.ts b/node_modules/@expo/metro-runtime/src/promiseRejectionTracking.native.ts
+deleted file mode 100644
+index b85e198..0000000
+--- a/node_modules/@expo/metro-runtime/src/promiseRejectionTracking.native.ts
++++ /dev/null
+@@ -1,73 +0,0 @@
+-import ExceptionsManager from './error-overlay/modules/ExceptionsManager';
+-
+-type GlobalThis = {
+-  HermesInternal:
+-    | {
+-        enablePromiseRejectionTracker?: (options: {
+-          allRejections?: boolean;
+-          onUnhandled?: (id: number, rejection?: any) => void;
+-          onHandled?: (id: number) => void;
+-        }) => void;
+-        hasPromise?: () => boolean;
+-      }
+-    | undefined;
+-};
+-
+-// https://github.com/facebook/react-native/commit/c4082c9ce208a324c2d011823ca2ba432411aafc
+-export function enablePromiseRejectionTracking() {
+-  const global = globalThis as unknown as GlobalThis;
+-  if (
+-    // Early return if Hermes Promise is not available or tracker is not available
+-    // https://github.com/facebook/react-native/blob/256565cb1198c02cda218e06de5700c85d8ad589/packages/react-native/Libraries/Core/polyfillPromise.js#L25
+-    !global?.HermesInternal?.hasPromise?.() ||
+-    !global?.HermesInternal?.enablePromiseRejectionTracker
+-  ) {
+-    return;
+-  }
+-
+-  global.HermesInternal.enablePromiseRejectionTracker({
+-    allRejections: true,
+-    onUnhandled: (id, rejection) => {
+-      let message: string;
+-
+-      if (rejection === undefined) {
+-        message = '';
+-      } else if (
+-        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+-        Object.prototype.toString.call(rejection) === '[object Error]'
+-      ) {
+-        // $FlowFixMe[method-unbinding] added when improving typing for this parameters
+-        message = Error.prototype.toString.call(rejection);
+-      } else {
+-        try {
+-          message = require('pretty-format').format(rejection);
+-        } catch {
+-          message = typeof rejection === 'string' ? rejection : JSON.stringify(rejection);
+-        }
+-      }
+-
+-      const rejectionPrefix = `Uncaught (in promise, id: ${id})`;
+-      // This is not an Expo error, but
+-      // an uncaught promise rejection in the app.
+-      const rejectionError = new Error(`${rejectionPrefix} ${message ?? ''}`, {
+-        cause: rejection,
+-      });
+-      if (typeof rejection === 'object' && 'stack' in rejection) {
+-        // If original rejection stack exists, use it
+-        rejectionError.stack = `${rejectionPrefix} ${rejection.stack ?? ''}`;
+-      } else {
+-        // Deleting the stack property would trigger exception handler to collect the current stack
+-        // Stack of the error created here won't be any useful to the user
+-        rejectionError.stack = `${rejectionPrefix} ${message ?? ''}`;
+-      }
+-      ExceptionsManager.handleException(rejectionError);
+-    },
+-    onHandled: (id) => {
+-      const warning =
+-        `Promise rejection handled (id: ${id})\n` +
+-        'This means you can ignore any previous messages of the form ' +
+-        `"Uncaught (in promise, id: ${id})"`;
+-      console.warn(warning);
+-    },
+-  });
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/promiseRejectionTracking.ts b/node_modules/@expo/metro-runtime/src/promiseRejectionTracking.ts
+index ff184c5..ce91a14 100644
+--- a/node_modules/@expo/metro-runtime/src/promiseRejectionTracking.ts
++++ b/node_modules/@expo/metro-runtime/src/promiseRejectionTracking.ts
+@@ -1,2 +1,12 @@
+-// NOTE(@krystofwoldrich): This is only needed for native runtimes (hermes)
+-export function enablePromiseRejectionTracking() {}
++/**
++ * This file is required by `src/index.ts` in some @expo/metro-runtime releases.
++ *
++ * The package's `main` points at `src/index.ts` which `require()`s this module,
++ * but the published `src/` directory is incomplete. Provide a minimal fallback
++ * so Metro/Expo can start.
++ */
++
++export function enablePromiseRejectionTracking(): void {
++  // No-op fallback. React Native has built-in handling; this is an Expo dev helper.
++}
++
+diff --git a/node_modules/@expo/metro-runtime/src/symbolicate.ts b/node_modules/@expo/metro-runtime/src/symbolicate.ts
+deleted file mode 100644
+index aaf4313..0000000
+--- a/node_modules/@expo/metro-runtime/src/symbolicate.ts
++++ /dev/null
+@@ -1,6 +0,0 @@
+-import { LogBoxLog } from './error-overlay/Data/LogBoxLog';
+-import parseErrorStack from './error-overlay/modules/parseErrorStack';
+-
+-export { LogBoxLog, parseErrorStack };
+-
+-export { getStackFormattedLocation } from './error-overlay/formatProjectFilePath';
+diff --git a/node_modules/@expo/metro-runtime/src/ts-declarations/react-native-web.d.ts b/node_modules/@expo/metro-runtime/src/ts-declarations/react-native-web.d.ts
+deleted file mode 100644
+index 4d66ad8..0000000
+--- a/node_modules/@expo/metro-runtime/src/ts-declarations/react-native-web.d.ts
++++ /dev/null
+@@ -1,3 +0,0 @@
+-declare module 'react-native-web' {
+-  export { DeviceEventEmitter } from 'react-native';
+-}
+diff --git a/node_modules/@expo/metro-runtime/src/ts-declarations/react-native.d.ts b/node_modules/@expo/metro-runtime/src/ts-declarations/react-native.d.ts
+deleted file mode 100644
+index 69883f4..0000000
+--- a/node_modules/@expo/metro-runtime/src/ts-declarations/react-native.d.ts
++++ /dev/null
+@@ -1,42 +0,0 @@
+-declare module 'react-native/Libraries/Utilities/PolyfillFunctions' {
+-  export function polyfillGlobal(): void;
+-  export function polyfillGlobal(name: string, install: () => unknown): void;
+-}
+-
+-declare module 'react-native/Libraries/Utilities/DevLoadingView' {
+-  const LoadingView: any;
+-  export default LoadingView;
+-}
+-
+-declare module 'react-native/Libraries/Core/ExceptionsManager' {
+-  declare class SyntheticError extends Error {}
+-  const ExceptionsManager: {
+-    parseException(e: any, isFatal: boolean): void;
+-    handleException(e: any): void;
+-    SyntheticError: typeof SyntheticError;
+-  };
+-  export default ExceptionsManager;
+-}
+-
+-declare module 'react-native/Libraries/NativeModules/specs/NativeLogBox' {
+-  const NativeLogBox: {
+-    show(): void;
+-    hide(): void;
+-  };
+-  export default NativeLogBox;
+-}
+-
+-declare module 'react-native/Libraries/Core/Devtools/getDevServer' {
+-  interface DevServerInfo {
+-    bundleLoadedFromServer: boolean;
+-    fullBundleUrl: string;
+-    url: string;
+-  }
+-  function getDevServer(): DevServerInfo;
+-  export default getDevServer;
+-}
+-
+-declare module 'react-native/Libraries/Core/Devtools/openFileInEditor' {
+-  function openFileInEditor(file: string, lineNumber: number): void;
+-  export default getDevServer;
+-}
