@@ -10,7 +10,6 @@ function getApiBaseUrl() {
 
   if (typeof fromExtra === "string" && fromExtra.length) return fromExtra;
 
-  // Android emulator localhost
   return "http://10.0.2.2:4000";
 }
 
@@ -19,4 +18,3 @@ export const api = axios.create({
   withCredentials: true,
   timeout: 20000,
 });
-

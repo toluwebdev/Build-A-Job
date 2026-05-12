@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Mail, ArrowLeft, CheckCircle } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -19,27 +19,33 @@ import Animated, {
   withDelay,
   FadeIn,
   FadeInUp,
-} from 'react-native-reanimated';
-import LottieView from 'lottie-react-native';
+} from "react-native-reanimated";
+import LottieView from "lottie-react-native";
 
-import { Colors, Typography, Spacing, BorderRadius, Validation } from '../../src/constants';
-import { GlassCard } from '../../src/components/ui/GlassCard';
-import { Button } from '../../src/components/ui/Button';
+import {
+  Colors,
+  Typography,
+  Spacing,
+  BorderRadius,
+  Validation,
+} from "../../src/constants";
+import { GlassCard } from "../../src/components/ui/GlassCard";
+import { Button } from "../../src/components/ui/Button";
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const lottieRef = useRef<LottieView>(null);
 
   const validateEmail = () => {
     if (!email) {
-      setError('Email is required');
+      setError("Email is required");
       return false;
     }
     if (!Validation.EMAIL_REGEX.test(email)) {
-      setError('Please enter a valid email');
+      setError("Please enter a valid email");
       return false;
     }
     return true;
@@ -47,7 +53,7 @@ export default function ForgotPasswordScreen() {
 
   const handleSubmit = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setError('');
+    setError("");
 
     if (!validateEmail()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -64,7 +70,7 @@ export default function ForgotPasswordScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       lottieRef.current?.play();
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError("Something went wrong. Please try again.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsLoading(false);
@@ -74,7 +80,10 @@ export default function ForgotPasswordScreen() {
   if (isSuccess) {
     return (
       <View style={styles.container}>
-        <Animated.View entering={FadeIn.duration(500)} style={styles.successContainer}>
+        <Animated.View
+          entering={FadeIn.duration(500)}
+          style={styles.successContainer}
+        >
           {/* Animated Email Icon */}
           <View style={styles.iconContainer}>
             <Animated.View
@@ -86,31 +95,44 @@ export default function ForgotPasswordScreen() {
                 entering={FadeInUp.delay(600).duration(400)}
                 style={styles.checkBadge}
               >
-                <CheckCircle size={32} color={Colors.success} fill={`${Colors.success}20`} />
+                <CheckCircle
+                  size={32}
+                  color={Colors.success}
+                  fill={`${Colors.success}20`}
+                />
               </Animated.View>
             </Animated.View>
           </View>
 
-          <Animated.Text entering={FadeInUp.delay(400).duration(500)} style={styles.successTitle}>
+          <Animated.Text
+            entering={FadeInUp.delay(400).duration(500)}
+            style={styles.successTitle}
+          >
             Check your inbox
           </Animated.Text>
 
-          <Animated.Text entering={FadeInUp.delay(500).duration(500)} style={styles.successText}>
-            We've sent a password reset link to{'\n'}
+          <Animated.Text
+            entering={FadeInUp.delay(500).duration(500)}
+            style={styles.successText}
+          >
+            We've sent a password reset link to{"\n"}
             <Text style={styles.emailHighlight}>{email}</Text>
           </Animated.Text>
 
-          <Animated.View entering={FadeInUp.delay(700).duration(500)} style={styles.successButtons}>
+          <Animated.View
+            entering={FadeInUp.delay(700).duration(500)}
+            style={styles.successButtons}
+          >
             <Button
               title="Back to Sign In"
-              onPress={() => router.push('/auth/login')}
+              onPress={() => router.push("/auth/login")}
               style={styles.backButton}
             />
 
             <TouchableOpacity
               onPress={() => {
                 setIsSuccess(false);
-                setEmail('');
+                setEmail("");
               }}
               style={styles.resendButton}
             >
@@ -124,7 +146,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
       <ScrollView
@@ -165,7 +187,7 @@ export default function ForgotPasswordScreen() {
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
-                setError('');
+                setError("");
               }}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -182,11 +204,12 @@ export default function ForgotPasswordScreen() {
           />
 
           <TouchableOpacity
-            onPress={() => router.push('/auth/login')}
+            onPress={() => router.push("/auth/login")}
             style={styles.rememberPassword}
           >
             <Text style={styles.rememberPasswordText}>
-              Remember your password? <Text style={styles.signInLink}>Sign In</Text>
+              Remember your password?{" "}
+              <Text style={styles.signInLink}>Sign In</Text>
             </Text>
           </TouchableOpacity>
         </GlassCard>
@@ -202,22 +225,22 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: Spacing.lg,
   },
   backButtonTop: {
-    position: 'absolute',
+    position: "absolute",
     top: 60,
     left: Spacing.lg,
     zIndex: 10,
     padding: Spacing.sm,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: Spacing.xl,
   },
   logo: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     fontSize: 32,
     color: Colors.primary,
   },
@@ -225,13 +248,13 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
   },
   title: {
-    fontFamily: 'Inter-Bold',
-    fontSize: Typography.sizes['2xl'],
+    fontFamily: "Inter-Bold",
+    fontSize: Typography.sizes["2xl"],
     color: Colors.text,
     marginBottom: Spacing.xs,
   },
   subtitle: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: Typography.sizes.base,
     color: Colors.textSecondary,
     marginBottom: Spacing.xl,
@@ -244,13 +267,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   errorText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: Typography.sizes.sm,
     color: Colors.error,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
@@ -263,7 +286,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: Typography.sizes.base,
     color: Colors.text,
     paddingVertical: Spacing.md,
@@ -272,35 +295,35 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   rememberPassword: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   rememberPasswordText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: Typography.sizes.sm,
     color: Colors.textSecondary,
   },
   signInLink: {
     color: Colors.primary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
   },
   // Success State Styles
   successContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: Spacing.lg,
   },
   iconContainer: {
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing["2xl"],
   },
   emailIconWrapper: {
-    position: 'relative',
+    position: "relative",
     padding: Spacing.xl,
     backgroundColor: `${Colors.primary}15`,
     borderRadius: 100,
   },
   checkBadge: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
     backgroundColor: Colors.background,
@@ -308,37 +331,37 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   successTitle: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     fontSize: 28,
     color: Colors.text,
     marginBottom: Spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
   },
   successText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     fontSize: Typography.sizes.base,
     color: Colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing["2xl"],
   },
   emailHighlight: {
     color: Colors.primary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
   },
   successButtons: {
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
   backButton: {
-    width: '100%',
+    width: "100%",
     marginBottom: Spacing.md,
   },
   resendButton: {
     padding: Spacing.md,
   },
   resendText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     fontSize: Typography.sizes.base,
     color: Colors.primary,
   },

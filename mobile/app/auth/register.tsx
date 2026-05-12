@@ -22,7 +22,6 @@ import Animated, {
 import { Colors, Typography, Spacing, BorderRadius, Validation } from '../../src/constants';
 import { GlassCard } from '../../src/components/ui/GlassCard';
 import { Button } from '../../src/components/ui/Button';
-import { useAuthStore } from '../../src/context/AuthContext';
 
 interface PasswordStrength {
   score: number;
@@ -52,8 +51,9 @@ function getPasswordStrength(password: string): PasswordStrength {
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { register, isLoading, error, clearError } = useAuthStore();
   const shakeAnimation = useRef(new RNAnimated.Value(0)).current;
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -114,26 +114,18 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    clearError();
-
     if (!validateFields()) {
       shakeForm();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
+    setIsLoading(true);
     try {
-      await register({
-        email,
-        password,
-        firstName,
-        lastName,
-        type: 'HOMEOWNER',
-      });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      shakeForm();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      router.replace('/main');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -159,12 +151,6 @@ export default function RegisterScreen() {
           <GlassCard style={styles.card}>
             <Text style={styles.title}>Sign Up</Text>
             <Text style={styles.subtitle}>Join thousands of homeowners</Text>
-
-            {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
 
             {/* Name Row */}
             <View style={styles.nameRow}>

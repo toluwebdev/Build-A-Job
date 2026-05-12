@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
-  Alert,
   Image,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -44,7 +43,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, Spacing, BorderRadius } from '../../../src/constants';
-import { useAuthStore } from '../../../src/context/AuthContext';
+import { alerts } from '../../../src/services/alertService';
 
 // Types
 interface MenuItem {
@@ -180,47 +179,34 @@ function ToggleItem({
 }
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore();
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
   const [locationServices, setLocationServices] = useState(true);
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            logout();
-            router.replace('/auth/login');
-          },
-        },
-      ]
-    );
+  const handleLogout = async () => {
+    const ok = await alerts.confirm('Are you sure you want to sign out?', {
+      title: 'Sign Out',
+      confirmText: 'Sign Out',
+      destructive: true,
+    });
+    if (!ok) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.replace('/auth/login');
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
+  const handleDeleteAccount = async () => {
+    const ok = await alerts.confirm(
       'This action cannot be undone. All your data will be permanently deleted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            // Handle account deletion
-          },
-        },
-      ]
+      {
+        title: 'Delete Account',
+        confirmText: 'Delete',
+        destructive: true,
+      }
     );
+    if (!ok) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    // Handle account deletion
   };
 
   const menuSections: MenuSection[] = [
@@ -317,8 +303,8 @@ export default function ProfileScreen() {
                 style={styles.avatar}
               >
                 <Text style={styles.avatarText}>
-                  {user?.firstName?.[0] || 'J'}
-                  {user?.lastName?.[0] || 'D'}
+                  {'J'}
+                  {'D'}
                 </Text>
               </LinearGradient>
               <TouchableOpacity style={styles.editAvatarButton}>
@@ -328,10 +314,10 @@ export default function ProfileScreen() {
 
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>
-                {user?.firstName || 'John'} {user?.lastName || 'Doe'}
+                John Doe
               </Text>
               <Text style={styles.profileEmail}>
-                {user?.email || 'john.doe@example.com'}
+                john.doe@example.com
               </Text>
               <View style={styles.verifiedBadge}>
                 <Shield size={12} color="#00D4AA" fill="#00D4AA" />

@@ -56,7 +56,7 @@
       "router": {
         "origin": false
       },
-      "apiBaseUrl": "http://10.0.2.2:4000",
+      "apiBaseUrl": "http://10.0.2.2:5000",
       "eas": {
         "projectId": "d2f96bc6-77c2-43ae-9ae1-b2e89a2d5399"
       }

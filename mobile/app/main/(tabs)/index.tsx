@@ -36,7 +36,6 @@ import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../src/constants';
 import { GlassCard } from '../../../src/components/ui/GlassCard';
 import { PillBadge } from '../../../src/components/ui/PillBadge';
-import { useAuthStore } from '../../../src/context/AuthContext';
 
 interface DashboardData {
   unreadNotifications?: number;
@@ -191,7 +190,6 @@ function AnimatedHeroButton({ onPress }: { onPress: () => void }) {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [dashboardData] = useState<DashboardData>(MOCK_DASHBOARD);
@@ -234,20 +232,14 @@ export default function HomeScreen() {
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.push('/main/profile')}>
             <View style={styles.avatarContainer}>
-              {user?.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarText}>
-                    {user?.firstName?.[0]}{user?.lastName?.[0]}
-                  </Text>
-                </View>
-              )}
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>GU</Text>
+              </View>
             </View>
           </TouchableOpacity>
           <View>
             <Text style={styles.greeting}>{getGreeting()},</Text>
-            <Text style={styles.userName}>{user?.firstName}</Text>
+            <Text style={styles.userName}>Guest</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.notificationButton}>

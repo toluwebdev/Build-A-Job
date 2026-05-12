@@ -24,13 +24,13 @@ import Animated, {
 import { Colors, Typography, Spacing, BorderRadius, Validation } from '../../src/constants';
 import { GlassCard } from '../../src/components/ui/GlassCard';
 import { Button } from '../../src/components/ui/Button';
-import { useAuthStore } from '../../src/context/AuthContext';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading, error, clearError } = useAuthStore();
   const shakeAnimation = useRef(new RNAnimated.Value(0)).current;
-  
+
+  const [isLoading, setIsLoading] = useState(false);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -77,19 +77,17 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    clearError();
-    
     if (!validateFields()) {
       shakeForm();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-    
+
+    setIsLoading(true);
     try {
-      await login({ email, password });
-    } catch (error) {
-      shakeForm();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      router.replace('/main');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -141,12 +139,6 @@ export default function LoginScreen() {
           <GlassCard style={styles.card}>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue</Text>
-
-            {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
 
             {/* Email Input */}
             <View style={styles.inputContainer}>
