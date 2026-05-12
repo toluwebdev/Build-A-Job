@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, ActivityIndicator } from "react-native";
 
+import { AppProvider, useApp } from "../src/context/AppContext";
 import { CreateJobProvider } from "../src/context/CreateJobContext";
 import { Colors } from "../src/constants";
 
@@ -18,6 +19,7 @@ const queryClient = new QueryClient({
 function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
+  const { isReady } = useApp();
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(
     null,
   );
@@ -30,15 +32,15 @@ function RootLayoutNav() {
   }, []);
 
   useEffect(() => {
-    if (hasSeenOnboarding === null) return;
+    if (!isReady || hasSeenOnboarding === null) return;
 
     const inOnboarding = segments[0] === "(onboarding)";
     if (!hasSeenOnboarding && !inOnboarding) {
       router.replace("/(onboarding)");
     }
-  }, [hasSeenOnboarding, segments, router]);
+  }, [isReady, hasSeenOnboarding, segments, router]);
 
-  if (hasSeenOnboarding === null) {
+  if (!isReady || hasSeenOnboarding === null) {
     return (
       <View
         style={{
@@ -70,12 +72,14 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <CreateJobProvider>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style="light" />
-          <RootLayoutNav />
-        </QueryClientProvider>
-      </CreateJobProvider>
+      <AppProvider>
+        <CreateJobProvider>
+          <QueryClientProvider client={queryClient}>
+            <StatusBar style="light" />
+            <RootLayoutNav />
+          </QueryClientProvider>
+        </CreateJobProvider>
+      </AppProvider>
     </GestureHandlerRootView>
   );
 }

@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   TextInput,
   Animated as RNAnimated,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Mail, Lock, Eye, EyeOff, Fingerprint, Globe } from 'lucide-react-native';
@@ -24,12 +25,15 @@ import Animated, {
 import { Colors, Typography, Spacing, BorderRadius, Validation } from '../../src/constants';
 import { GlassCard } from '../../src/components/ui/GlassCard';
 import { Button } from '../../src/components/ui/Button';
+import { useApp } from '../../src/context/AppContext';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { loginAccount } = useApp();
   const shakeAnimation = useRef(new RNAnimated.Value(0)).current;
 
   const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,8 +62,6 @@ export default function LoginScreen() {
     
     if (!password) {
       errors.password = 'Password is required';
-    } else if (password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
     }
     
     setFieldErrors(errors);
@@ -77,6 +79,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSubmitError(null);
     if (!validateFields()) {
       shakeForm();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -85,6 +88,20 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
+      const result = await loginAccount({ email, password });
+      if (!result.ok) {
+        setSubmitError(result.message ?? 'Sign in failed');
+        shakeForm();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (result.requiresVerification && result.message) {
+        Alert.alert('Verify your email', result.message, [
+          { text: 'OK', onPress: () => router.replace('/main') },
+        ]);
+        return;
+      }
       router.replace('/main');
     } finally {
       setIsLoading(false);
@@ -140,6 +157,12 @@ export default function LoginScreen() {
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue</Text>
 
+            {submitError ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{submitError}</Text>
+              </View>
+            ) : null}
+
             {/* Email Input */}
             <View style={styles.inputContainer}>
               <Mail size={20} color={Colors.textMuted} style={styles.inputIcon} />
@@ -150,6 +173,7 @@ export default function LoginScreen() {
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
+                  setSubmitError(null);
                   setFieldErrors((prev) => ({ ...prev, email: '' }));
                 }}
                 keyboardType="email-address"
@@ -171,6 +195,7 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
+                  setSubmitError(null);
                   setFieldErrors((prev) => ({ ...prev, password: '' }));
                 }}
                 secureTextEntry={!showPassword}

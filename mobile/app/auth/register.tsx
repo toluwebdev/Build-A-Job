@@ -22,6 +22,7 @@ import Animated, {
 import { Colors, Typography, Spacing, BorderRadius, Validation } from '../../src/constants';
 import { GlassCard } from '../../src/components/ui/GlassCard';
 import { Button } from '../../src/components/ui/Button';
+import { useApp } from '../../src/context/AppContext';
 
 interface PasswordStrength {
   score: number;
@@ -51,9 +52,11 @@ function getPasswordStrength(password: string): PasswordStrength {
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { registerAccount } = useApp();
   const shakeAnimation = useRef(new RNAnimated.Value(0)).current;
 
   const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -114,6 +117,8 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSubmitError(null);
+
     if (!validateFields()) {
       shakeForm();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -122,6 +127,18 @@ export default function RegisterScreen() {
 
     setIsLoading(true);
     try {
+      const result = await registerAccount({
+        firstName,
+        lastName,
+        email,
+        password,
+      });
+      if (!result.ok) {
+        setSubmitError(result.message ?? 'Registration failed');
+        shakeForm();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/main');
     } finally {
@@ -151,6 +168,12 @@ export default function RegisterScreen() {
           <GlassCard style={styles.card}>
             <Text style={styles.title}>Sign Up</Text>
             <Text style={styles.subtitle}>Join thousands of homeowners</Text>
+
+            {submitError ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{submitError}</Text>
+              </View>
+            ) : null}
 
             {/* Name Row */}
             <View style={styles.nameRow}>

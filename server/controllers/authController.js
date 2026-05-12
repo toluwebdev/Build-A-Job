@@ -1,21 +1,15 @@
-import transporter from "../config/nodemailer.js";
 import User from "../schema/userSchema.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import {
+  sendPasswordResetOtpEmail,
+  sendVerificationOtpEmail,
+} from "../services/emailService.js";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 
 function generateOtp() {
   return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-async function sendMail({ to, subject, text }) {
-  await transporter.sendMail({
-    from: process.env.SENDER_EMAIL,
-    to,
-    subject,
-    text,
-  });
 }
 
 function signUserToken(user) {
@@ -61,10 +55,10 @@ export const register = async (req, res) => {
       verifyOtp: otp,
       verifyOtpExpireAt,
     });
-    await sendMail({
+    await sendVerificationOtpEmail({
       to: user.email,
-      subject: "Verify your account",
-      text: `Your verification code is ${otp}. It expires in 10 minutes. Do not share this code.`,
+      firstName: user.firstName,
+      otp,
     });
 
     const token = signUserToken(user);
@@ -114,10 +108,10 @@ export const login = async (req, res) => {
       user.verifyOtp = otp;
       user.verifyOtpExpireAt = Date.now() + OTP_TTL_MS;
       await user.save();
-      await sendMail({
+      await sendVerificationOtpEmail({
         to: user.email,
-        subject: "Verify your account",
-        text: `Your verification code is ${otp}. It expires in 10 minutes. Do not share this code.`,
+        firstName: user.firstName,
+        otp,
       });
 
       return res.status(200).json({
@@ -240,10 +234,10 @@ export const resendVerificationEmail = async (req, res) => {
     user.verifyOtpExpireAt = Date.now() + OTP_TTL_MS;
     await user.save();
 
-    await sendMail({
+    await sendVerificationOtpEmail({
       to: user.email,
-      subject: "Verify your account",
-      text: `Your verification code is ${otp}. It expires in 10 minutes. Do not share this code.`,
+      firstName: user.firstName,
+      otp,
     });
 
     res.status(200).json({
@@ -280,10 +274,10 @@ async function sendPasswordResetOtp(email, res) {
   user.resetOtpExpireAt = Date.now() + OTP_TTL_MS;
   await user.save();
 
-  await sendMail({
+  await sendPasswordResetOtpEmail({
     to: user.email,
-    subject: "Reset your password",
-    text: `Your password reset code is ${otp}. It expires in 10 minutes. If you did not request this, ignore this email.`,
+    firstName: user.firstName,
+    otp,
   });
 
   res.status(200).json({

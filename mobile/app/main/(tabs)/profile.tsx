@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -43,6 +43,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, Spacing, BorderRadius } from '../../../src/constants';
+import { useApp } from '../../../src/context/AppContext';
 import { alerts } from '../../../src/services/alertService';
 
 // Types
@@ -179,10 +180,25 @@ function ToggleItem({
 }
 
 export default function ProfileScreen() {
+  const { user, logoutAccount } = useApp();
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
   const [locationServices, setLocationServices] = useState(true);
+
+  const displayName = useMemo(() => {
+    if (!user) return 'Guest';
+    const name = `${user.firstName} ${user.lastName}`.trim();
+    return name || user.email.split('@')[0] || 'Account';
+  }, [user]);
+
+  const initials = useMemo(() => {
+    if (!user) return 'GU';
+    const a = user.firstName?.[0] ?? '';
+    const b = user.lastName?.[0] ?? '';
+    const pair = `${a}${b}`.toUpperCase();
+    return pair || user.email?.[0]?.toUpperCase() || '?';
+  }, [user]);
 
   const handleLogout = async () => {
     const ok = await alerts.confirm('Are you sure you want to sign out?', {
@@ -192,6 +208,7 @@ export default function ProfileScreen() {
     });
     if (!ok) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await logoutAccount();
     router.replace('/auth/login');
   };
 
@@ -217,7 +234,7 @@ export default function ProfileScreen() {
           id: 'personal-info',
           icon: User,
           label: 'Personal Information',
-          value: 'John Doe',
+          value: displayName,
           hasArrow: true,
           onPress: () => {},
         },
@@ -302,10 +319,7 @@ export default function ProfileScreen() {
                 colors={['#7B5CF6', '#00D4AA']}
                 style={styles.avatar}
               >
-                <Text style={styles.avatarText}>
-                  {'J'}
-                  {'D'}
-                </Text>
+                <Text style={styles.avatarText}>{initials}</Text>
               </LinearGradient>
               <TouchableOpacity style={styles.editAvatarButton}>
                 <Edit3 size={14} color={Colors.background} />
@@ -313,15 +327,15 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>
-                John Doe
-              </Text>
+              <Text style={styles.profileName}>{displayName}</Text>
               <Text style={styles.profileEmail}>
-                john.doe@example.com
+                {user?.email ?? 'Sign in to sync your profile'}
               </Text>
               <View style={styles.verifiedBadge}>
                 <Shield size={12} color="#00D4AA" fill="#00D4AA" />
-                <Text style={styles.verifiedText}>Verified Customer</Text>
+                <Text style={styles.verifiedText}>
+                  {user?.emailVerified ? 'Verified Customer' : 'Verify your email'}
+                </Text>
               </View>
             </View>
           </View>

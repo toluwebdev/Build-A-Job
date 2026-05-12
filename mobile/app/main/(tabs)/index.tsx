@@ -34,6 +34,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 import { Colors, Typography, Spacing, BorderRadius } from '../../../src/constants';
+import { useApp } from '../../../src/context/AppContext';
 import { GlassCard } from '../../../src/components/ui/GlassCard';
 import { PillBadge } from '../../../src/components/ui/PillBadge';
 
@@ -190,6 +191,7 @@ function AnimatedHeroButton({ onPress }: { onPress: () => void }) {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user } = useApp();
   const [refreshing, setRefreshing] = useState(false);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [dashboardData] = useState<DashboardData>(MOCK_DASHBOARD);
@@ -220,6 +222,15 @@ export default function HomeScreen() {
     });
   };
 
+  const homeDisplayName =
+    user?.firstName?.trim() ||
+    user?.email?.split('@')[0] ||
+    'Guest';
+  const homeInitials =
+    user?.firstName?.[0] && user?.lastName?.[0]
+      ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+      : user?.email?.slice(0, 2).toUpperCase() ?? 'GU';
+
   return (
     <ScrollView
       style={styles.container}
@@ -233,13 +244,13 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={() => router.push('/main/profile')}>
             <View style={styles.avatarContainer}>
               <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>GU</Text>
+                <Text style={styles.avatarText}>{homeInitials}</Text>
               </View>
             </View>
           </TouchableOpacity>
           <View>
             <Text style={styles.greeting}>{getGreeting()},</Text>
-            <Text style={styles.userName}>Guest</Text>
+            <Text style={styles.userName}>{homeDisplayName}</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.notificationButton}>
