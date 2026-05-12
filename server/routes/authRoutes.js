@@ -22,4 +22,5 @@ authRoutes.post("/verify-email", verifyEmail);
 authRoutes.post("/resend-verification-email", resendVerificationEmail);
 authRoutes.post("/send-reset-password-email", sendResetPasswordEmail);
 authRoutes.get("/user", authMiddleware, getUser);
+authRoutes.delete("/delete-account", authMiddleware, deleteAccount);
 export default authRoutes;

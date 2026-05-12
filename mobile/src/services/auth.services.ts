@@ -114,6 +114,37 @@ export async function resendVerificationEmailRequest(email: string): Promise<{
   return data;
 }
 
+/** POST /api/auth/forgot-password — sends 6-digit reset code by email */
+export async function requestPasswordReset(email: string): Promise<{
+  success?: boolean;
+  message?: string;
+}> {
+  const { data } = await api.post<{
+    success?: boolean;
+    message?: string;
+  }>("/auth/forgot-password", {
+    email: email.trim().toLowerCase(),
+  });
+  return data;
+}
+
+/** POST /api/auth/reset-password — completes reset with OTP */
+export async function resetPasswordWithOtp(body: {
+  email: string;
+  otp: string;
+  newPassword: string;
+}): Promise<{ success?: boolean; message?: string }> {
+  const { data } = await api.post<{
+    success?: boolean;
+    message?: string;
+  }>("/auth/reset-password", {
+    email: body.email.trim().toLowerCase(),
+    otp: String(body.otp).trim(),
+    newPassword: body.newPassword,
+  });
+  return data;
+}
+
 export function getAuthErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const ax = error;
