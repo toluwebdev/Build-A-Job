@@ -19,7 +19,7 @@ const queryClient = new QueryClient({
 function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
-  const { isReady } = useApp();
+  const { isReady, user } = useApp();
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(
     null,
   );
@@ -34,11 +34,48 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!isReady || hasSeenOnboarding === null) return;
 
-    const inOnboarding = segments[0] === "(onboarding)";
+    const group = segments[0];
+    const inOnboarding = group === "(onboarding)";
     if (!hasSeenOnboarding && !inOnboarding) {
       router.replace("/(onboarding)");
+      return;
     }
-  }, [isReady, hasSeenOnboarding, segments, router]);
+
+    /** Session restored — skip login/register/onboarding when already verified */
+    if (user && user.emailVerified === true) {
+      if (group === "auth" || group === "(onboarding)") {
+        router.replace("/main");
+      }
+      return;
+    }
+
+    if (
+      hasSeenOnboarding &&
+      user &&
+      user.emailVerified !== true
+    ) {
+      const inAuth = group === "auth";
+      const authRouteRaw = segments.at(1);
+      const authRoute =
+        typeof authRouteRaw === "string" ? authRouteRaw : "";
+      const allowedAuth = [
+        "verify-email",
+        "login",
+        "register",
+        "forgot-password",
+      ];
+      const allowed =
+        inAuth &&
+        authRoute.length > 0 &&
+        allowedAuth.includes(authRoute);
+      if (!allowed) {
+        router.replace({
+          pathname: "/auth/verify-email",
+          params: { email: user.email },
+        });
+      }
+    }
+  }, [isReady, hasSeenOnboarding, segments, router, user]);
 
   if (!isReady || hasSeenOnboarding === null) {
     return (

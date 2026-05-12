@@ -7,17 +7,34 @@ import React, {
   useState,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 import { AUTH_TOKEN_KEY } from "../constants/auth";
 import {
   clearStoredSession,
+  fetchCurrentUser,
   getAuthErrorMessage,
   loginUser,
   registerUser,
 } from "../services/auth.services";
 import { getApiBaseUrl } from "../services/api";
 import type { User, UserType } from "../types";
-import { decodeJwtPayload } from "../utils/jwt";
+import { mapServerUserToAppUser } from "../utils/mapServerUser";
+
+/** Decode JWT payload (no signature verification — server already validated). */
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = parts[1];
+    const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const json = globalThis.atob(padded);
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 function mapJwtToUser(payload: Record<string, unknown>): User | null {
   const id = payload.id;
@@ -25,8 +42,7 @@ function mapJwtToUser(payload: Record<string, unknown>): User | null {
   if (id == null || email == null) return null;
 
   const role = payload.role;
-  const type: UserType =
-    role === "trader" ? "TRADESPERSON" : "HOMEOWNER";
+  const type: UserType = role === "trader" ? "TRADESPERSON" : "HOMEOWNER";
   const verified = payload.v === true;
   const now = new Date().toISOString();
 
@@ -54,22 +70,42 @@ async function loadUserFromStorage(): Promise<User | null> {
   return mapJwtToUser(payload);
 }
 
+async function loadUserFromApiOrJwt(): Promise<User | null> {
+  try {
+    const serverUser = await fetchCurrentUser();
+    return mapServerUserToAppUser(serverUser);
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response?.status === 401) {
+      await clearStoredSession();
+      return null;
+    }
+    return loadUserFromStorage();
+  }
+}
+
 export type AppContextValue = {
-  /** Session loaded from storage */
+  /** Session + optional profile fetch finished */
   isReady: boolean;
   user: User | null;
   isAuthenticated: boolean;
-  /** Last auth/API error (also returned from register/login results) */
   authError: string | null;
   clearAuthError: () => void;
-  /** Current API origin (from Expo config) */
   apiOrigin: string;
+  /** Reload profile from GET /api/auth/user */
+  refreshUser: () => Promise<void>;
+  /** Set `user` from JWT in storage — call right after the token is saved (avoids navigation race before React re-renders). */
+  syncSessionFromStoredToken: () => Promise<void>;
   registerAccount: (input: {
     firstName: string;
     lastName: string;
     email: string;
     password: string;
-  }) => Promise<{ ok: boolean; message?: string }>;
+  }) => Promise<{
+    ok: boolean;
+    message?: string;
+    needsEmailVerification?: boolean;
+    email?: string;
+  }>;
   loginAccount: (input: {
     email: string;
     password: string;
@@ -77,6 +113,8 @@ export type AppContextValue = {
     ok: boolean;
     message?: string;
     requiresVerification?: boolean;
+    needsEmailVerification?: boolean;
+    email?: string;
   }>;
   logoutAccount: () => Promise<void>;
 };
@@ -93,8 +131,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+      if (!token) {
+        if (!cancelled) {
+          setUser(null);
+          setIsReady(true);
+        }
+        return;
+      }
       try {
-        const u = await loadUserFromStorage();
+        const u = await loadUserFromApiOrJwt();
         if (!cancelled) setUser(u);
       } finally {
         if (!cancelled) setIsReady(true);
@@ -105,17 +151,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const syncSessionFromStoredToken = useCallback(async () => {
+    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    const payload = decodeJwtPayload(token);
+    if (!payload) return;
+    const u = mapJwtToUser(payload);
+    if (u) setUser(u);
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    try {
+      const serverUser = await fetchCurrentUser();
+      setUser(mapServerUserToAppUser(serverUser));
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response?.status === 401) {
+        await clearStoredSession();
+        setUser(null);
+        return;
+      }
+      const fromJwt = await loadUserFromStorage();
+      if (fromJwt) setUser(fromJwt);
+    }
+  }, []);
+
   const registerAccount = useCallback<
     AppContextValue["registerAccount"]
   >(async (input) => {
     setAuthError(null);
     try {
       const res = await registerUser(input);
-      const u = await loadUserFromStorage();
+      const u = await loadUserFromApiOrJwt();
       setUser(u);
+      const emailNorm = input.email.trim().toLowerCase();
       return {
         ok: true,
         message: typeof res.message === "string" ? res.message : undefined,
+        needsEmailVerification: u !== null && !u.emailVerified,
+        email: u?.email ?? emailNorm,
       };
     } catch (e) {
       const msg = getAuthErrorMessage(e);
@@ -129,12 +210,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAuthError(null);
       try {
         const res = await loginUser(input);
-        const u = await loadUserFromStorage();
+        const u = await loadUserFromApiOrJwt();
         setUser(u);
+        const emailNorm = input.email.trim().toLowerCase();
+        const needsVerify =
+          (u !== null && !u.emailVerified) ||
+          res.requiresVerification === true;
         return {
           ok: true,
           message: typeof res.message === "string" ? res.message : undefined,
           requiresVerification: res.requiresVerification === true,
+          needsEmailVerification: needsVerify,
+          email: u?.email ?? emailNorm,
         };
       } catch (e) {
         const msg = getAuthErrorMessage(e);
@@ -159,6 +246,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       authError,
       clearAuthError,
       apiOrigin: getApiBaseUrl(),
+      refreshUser,
+      syncSessionFromStoredToken,
       registerAccount,
       loginAccount,
       logoutAccount,
@@ -168,6 +257,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       user,
       authError,
       clearAuthError,
+      refreshUser,
+      syncSessionFromStoredToken,
       registerAccount,
       loginAccount,
       logoutAccount,

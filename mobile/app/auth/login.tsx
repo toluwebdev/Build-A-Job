@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   TextInput,
   Animated as RNAnimated,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Mail, Lock, Eye, EyeOff, Fingerprint, Globe } from 'lucide-react-native';
@@ -96,10 +95,13 @@ export default function LoginScreen() {
         return;
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      if (result.requiresVerification && result.message) {
-        Alert.alert('Verify your email', result.message, [
-          { text: 'OK', onPress: () => router.replace('/main') },
-        ]);
+      if (result.needsEmailVerification) {
+        router.replace({
+          pathname: '/auth/verify-email',
+          params: {
+            email: result.email ?? email.trim().toLowerCase(),
+          },
+        });
         return;
       }
       router.replace('/main');

@@ -43,8 +43,7 @@ export const register = async (req, res) => {
     const verifyOtpExpireAt = Date.now() + OTP_TTL_MS;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const roleValue =
-      role === "trader" || role === "user" ? role : "user";
+    const roleValue = role === "trader" || role === "user" ? role : "user";
 
     const user = await User.create({
       firstName,
@@ -89,7 +88,9 @@ export const login = async (req, res) => {
     }
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      res.status(401).json({ success: false, message: "Invalid email or password" });
+      res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password" });
       return;
     }
 
@@ -359,7 +360,8 @@ export const resetPassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Password has been reset successfully. You can log in with your new password.",
+      message:
+        "Password has been reset successfully. You can log in with your new password.",
     });
   } catch (error) {
     res.status(500).json({
@@ -367,5 +369,23 @@ export const resetPassword = async (req, res) => {
       message: "Internal server error",
       error: error.message,
     });
+  }
+};
+
+export const getUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      res.status(404).json({ success: false, message: "User not found" });
+      return;
+    }
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+    console.log(error.message);
   }
 };

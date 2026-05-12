@@ -1,9 +1,38 @@
 import React from 'react';
-import { View, ViewProps, StyleSheet } from 'react-native';
+import { View, ViewProps, StyleSheet, ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 import { Colors, BorderRadius } from '../../constants';
+
+const PADDING_KEYS = [
+  'padding',
+  'paddingHorizontal',
+  'paddingVertical',
+  'paddingTop',
+  'paddingBottom',
+  'paddingLeft',
+  'paddingRight',
+] as const;
+
+/** BlurView often ignores padding; apply it on the inner bordered wrapper instead. */
+function splitPaddingFromStyle(style: ViewProps['style']): {
+  paddingStyle: ViewStyle;
+  restStyle: ViewProps['style'];
+} {
+  const flat = StyleSheet.flatten(style) as Record<string, unknown> | undefined;
+  if (!flat) return { paddingStyle: {}, restStyle: style };
+  const paddingStyle: ViewStyle = {};
+  const rest: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(flat)) {
+    if ((PADDING_KEYS as readonly string[]).includes(key)) {
+      (paddingStyle as Record<string, unknown>)[key] = value;
+    } else {
+      rest[key] = value;
+    }
+  }
+  return { paddingStyle, restStyle: rest as ViewStyle };
+}
 
 interface GlassCardProps extends ViewProps {
   intensity?: number;
@@ -21,6 +50,8 @@ export function GlassCard({
   pressed = false,
   ...props
 }: GlassCardProps) {
+  const { paddingStyle, restStyle } = splitPaddingFromStyle(style);
+
   const animatedStyle = useAnimatedStyle(() => {
     if (!animated) return {};
     
@@ -36,10 +67,10 @@ export function GlassCard({
       <BlurView
         intensity={intensity}
         tint={tint}
-        style={[styles.container, style]}
+        style={[styles.container, restStyle]}
         {...props}
       >
-        <View style={styles.border}>
+        <View style={[styles.border, paddingStyle]}>
           {children}
         </View>
       </BlurView>

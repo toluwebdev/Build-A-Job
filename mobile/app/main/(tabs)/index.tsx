@@ -61,6 +61,9 @@ const MOCK_DASHBOARD: DashboardData = {
   featuredTrades: [],
 };
 
+/** Align expanded copy with step title text (number + gaps + icon). */
+const HOW_IT_WORKS_BODY_INDENT = 28 + Spacing.md + 36 + Spacing.md;
+
 const HOW_IT_WORKS_STEPS = [
   {
     title: 'Snap a photo',
@@ -640,7 +643,8 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   howItWorksCard: {
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.lg,
   },
   stepItem: {
     paddingVertical: Spacing.md,
@@ -691,9 +695,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: Typography.sizes.sm,
     color: Colors.textSecondary,
-    marginTop: Spacing.md,
-    marginLeft: 52,
-    lineHeight: 20,
+    marginTop: Spacing.sm,
+    marginLeft: HOW_IT_WORKS_BODY_INDENT,
+    paddingRight: Spacing.sm,
+    lineHeight: 22,
   },
   bottomPadding: {
     height: 100,

@@ -25,6 +25,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera, Sparkles, MessageSquare, ChevronRight } from 'lucide-react-native';
 
 import { Colors, Typography, Spacing, BorderRadius } from '../../src/constants';
+import { useApp } from '../../src/context/AppContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -111,6 +112,7 @@ function SlideItem({
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { user } = useApp();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useSharedValue(0);
   const flatListRef = useRef<FlatList>(null);
@@ -140,6 +142,17 @@ export default function OnboardingScreen() {
 
   const finishOnboarding = async () => {
     await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+    if (user?.emailVerified) {
+      router.replace('/main');
+      return;
+    }
+    if (user && !user.emailVerified) {
+      router.replace({
+        pathname: '/auth/verify-email',
+        params: { email: user.email },
+      });
+      return;
+    }
     router.replace('/auth/login');
   };
 
@@ -243,7 +256,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
+    width: '100%',
+    paddingHorizontal: Spacing['3xl'],
   },
   title: {
     fontFamily: 'Inter-Bold',
@@ -258,7 +272,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
-    paddingHorizontal: Spacing.lg,
+    maxWidth: width - Spacing['3xl'] * 2,
   },
   bottomContainer: {
     paddingHorizontal: Spacing.lg,

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,16 +7,17 @@ import {
   ScrollView,
   Switch,
   Image,
-} from 'react-native';
-import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+} from "react-native";
+import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
   withSequence,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 import {
   User,
   Settings,
@@ -37,14 +38,14 @@ import {
   Phone,
   Lock,
   Trash2,
-} from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
+} from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { LinearGradient } from "expo-linear-gradient";
 
-import { Colors, Spacing, BorderRadius } from '../../../src/constants';
-import { useApp } from '../../../src/context/AppContext';
-import { alerts } from '../../../src/services/alertService';
+import { Colors, Spacing, BorderRadius } from "../../../src/constants";
+import { useApp } from "../../../src/context/AppContext";
+import { alerts } from "../../../src/services/alertService";
 
 // Types
 interface MenuItem {
@@ -84,18 +85,14 @@ function StatCard({
 }
 
 // Menu item component
-function MenuItem({
-  item,
-}: {
-  item: MenuItem;
-}) {
+function MenuItem({ item }: { item: MenuItem }) {
   const scale = useSharedValue(1);
   const Icon = item.icon;
 
   const handlePress = () => {
     scale.value = withSequence(
       withTiming(0.98, { duration: 50 }),
-      withTiming(1, { duration: 100 })
+      withTiming(1, { duration: 100 }),
     );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     item.onPress?.();
@@ -122,7 +119,7 @@ function MenuItem({
         >
           <Icon
             size={20}
-            color={item.isDestructive ? '#EF4444' : Colors.primary}
+            color={item.isDestructive ? "#EF4444" : Colors.primary}
           />
         </View>
         <View style={styles.menuContent}>
@@ -143,7 +140,7 @@ function MenuItem({
         {item.hasArrow && (
           <ChevronRight
             size={20}
-            color={item.isDestructive ? '#EF4444' : Colors.textMuted}
+            color={item.isDestructive ? "#EF4444" : Colors.textMuted}
           />
         )}
       </Animated.View>
@@ -180,46 +177,52 @@ function ToggleItem({
 }
 
 export default function ProfileScreen() {
-  const { user, logoutAccount } = useApp();
+  const { user, logoutAccount, refreshUser } = useApp();
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshUser();
+    }, [refreshUser]),
+  );
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
   const [locationServices, setLocationServices] = useState(true);
 
   const displayName = useMemo(() => {
-    if (!user) return 'Guest';
+    if (!user) return "Guest";
     const name = `${user.firstName} ${user.lastName}`.trim();
-    return name || user.email.split('@')[0] || 'Account';
+    return name || user.email.split("@")[0] || "Account";
   }, [user]);
 
   const initials = useMemo(() => {
-    if (!user) return 'GU';
-    const a = user.firstName?.[0] ?? '';
-    const b = user.lastName?.[0] ?? '';
+    if (!user) return "GU";
+    const a = user.firstName?.[0] ?? "";
+    const b = user.lastName?.[0] ?? "";
     const pair = `${a}${b}`.toUpperCase();
-    return pair || user.email?.[0]?.toUpperCase() || '?';
+    return pair || user.email?.[0]?.toUpperCase() || "?";
   }, [user]);
 
   const handleLogout = async () => {
-    const ok = await alerts.confirm('Are you sure you want to sign out?', {
-      title: 'Sign Out',
-      confirmText: 'Sign Out',
+    const ok = await alerts.confirm("Are you sure you want to sign out?", {
+      title: "Sign Out",
+      confirmText: "Sign Out",
       destructive: true,
     });
     if (!ok) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await logoutAccount();
-    router.replace('/auth/login');
+    router.replace("/auth/login");
   };
 
   const handleDeleteAccount = async () => {
     const ok = await alerts.confirm(
-      'This action cannot be undone. All your data will be permanently deleted.',
+      "This action cannot be undone. All your data will be permanently deleted.",
       {
-        title: 'Delete Account',
-        confirmText: 'Delete',
+        title: "Delete Account",
+        confirmText: "Delete",
         destructive: true,
-      }
+      },
     );
     if (!ok) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -228,62 +231,62 @@ export default function ProfileScreen() {
 
   const menuSections: MenuSection[] = [
     {
-      title: 'Account',
+      title: "Account",
       items: [
         {
-          id: 'personal-info',
+          id: "personal-info",
           icon: User,
-          label: 'Personal Information',
+          label: "Personal Information",
           value: displayName,
           hasArrow: true,
           onPress: () => {},
         },
         {
-          id: 'address',
+          id: "address",
           icon: MapPin,
-          label: 'My Addresses',
-          value: '3 saved addresses',
+          label: "My Addresses",
+          value: "3 saved addresses",
           hasArrow: true,
           onPress: () => {},
         },
         {
-          id: 'payment',
+          id: "payment",
           icon: CreditCard,
-          label: 'Payment Methods',
-          value: '2 cards',
+          label: "Payment Methods",
+          value: "2 cards",
           hasArrow: true,
           onPress: () => {},
         },
       ],
     },
     {
-      title: 'Preferences',
+      title: "Preferences",
       items: [
         {
-          id: 'notifications',
+          id: "notifications",
           icon: Bell,
-          label: 'Notifications',
+          label: "Notifications",
           hasArrow: true,
           onPress: () => {},
         },
         {
-          id: 'privacy',
+          id: "privacy",
           icon: Shield,
-          label: 'Privacy & Security',
+          label: "Privacy & Security",
           hasArrow: true,
           onPress: () => {},
         },
         {
-          id: 'help',
+          id: "help",
           icon: HelpCircle,
-          label: 'Help & Support',
+          label: "Help & Support",
           hasArrow: true,
           onPress: () => {},
         },
         {
-          id: 'terms',
+          id: "terms",
           icon: FileText,
-          label: 'Terms & Conditions',
+          label: "Terms & Conditions",
           hasArrow: true,
           onPress: () => {},
         },
@@ -292,16 +295,13 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar style="light" />
 
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => {}}
-        >
+        <TouchableOpacity style={styles.settingsButton} onPress={() => {}}>
           <Settings size={22} color={Colors.text} />
         </TouchableOpacity>
       </View>
@@ -316,7 +316,7 @@ export default function ProfileScreen() {
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
               <LinearGradient
-                colors={['#7B5CF6', '#00D4AA']}
+                colors={["#7B5CF6", "#00D4AA"]}
                 style={styles.avatar}
               >
                 <Text style={styles.avatarText}>{initials}</Text>
@@ -329,12 +329,14 @@ export default function ProfileScreen() {
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{displayName}</Text>
               <Text style={styles.profileEmail}>
-                {user?.email ?? 'Sign in to sync your profile'}
+                {user?.email ?? "Sign in to sync your profile"}
               </Text>
               <View style={styles.verifiedBadge}>
                 <Shield size={12} color="#00D4AA" fill="#00D4AA" />
                 <Text style={styles.verifiedText}>
-                  {user?.emailVerified ? 'Verified Customer' : 'Verify your email'}
+                  {user?.emailVerified
+                    ? "Verified Customer"
+                    : "Verify your email"}
                 </Text>
               </View>
             </View>
@@ -351,28 +353,33 @@ export default function ProfileScreen() {
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.quickIcon, { backgroundColor: `${Colors.primary}20` }]}>
+            <View
+              style={[
+                styles.quickIcon,
+                { backgroundColor: `${Colors.primary}20` },
+              ]}
+            >
               <Briefcase size={20} color={Colors.primary} />
             </View>
             <Text style={styles.quickLabel}>My Jobs</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.quickIcon, { backgroundColor: '#F59E0B20' }]}>
+            <View style={[styles.quickIcon, { backgroundColor: "#F59E0B20" }]}>
               <Star size={20} color="#F59E0B" />
             </View>
             <Text style={styles.quickLabel}>Reviews</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.quickIcon, { backgroundColor: '#3B82F620' }]}>
+            <View style={[styles.quickIcon, { backgroundColor: "#3B82F620" }]}>
               <CreditCard size={20} color="#3B82F6" />
             </View>
             <Text style={styles.quickLabel}>Payments</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.quickIcon, { backgroundColor: '#10B98120' }]}>
+            <View style={[styles.quickIcon, { backgroundColor: "#10B98120" }]}>
               <MapPin size={20} color="#10B981" />
             </View>
             <Text style={styles.quickLabel}>Addresses</Text>
@@ -428,18 +435,18 @@ export default function ProfileScreen() {
           <View style={styles.menuContainer}>
             <MenuItem
               item={{
-                id: 'logout',
+                id: "logout",
                 icon: LogOut,
-                label: 'Sign Out',
+                label: "Sign Out",
                 hasArrow: false,
                 onPress: handleLogout,
               }}
             />
             <MenuItem
               item={{
-                id: 'delete',
+                id: "delete",
                 icon: Trash2,
-                label: 'Delete Account',
+                label: "Delete Account",
                 hasArrow: false,
                 isDestructive: true,
                 onPress: handleDeleteAccount,
@@ -468,15 +475,15 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
   headerTitle: {
     fontSize: 28,
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     color: Colors.text,
   },
   settingsButton: {
@@ -484,8 +491,8 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.border,
   },
@@ -508,36 +515,36 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.md,
     marginBottom: Spacing.lg,
   },
   avatarContainer: {
-    position: 'relative',
+    position: "relative",
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   avatarText: {
     fontSize: 28,
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     color: Colors.background,
   },
   editAvatarButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
     width: 28,
     height: 28,
     borderRadius: 14,
     backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
     borderColor: Colors.surface,
   },
@@ -546,35 +553,35 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 20,
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     color: Colors.text,
     marginBottom: Spacing.xs,
   },
   profileEmail: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     color: Colors.textSecondary,
     marginBottom: Spacing.sm,
   },
   verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.xs,
-    backgroundColor: '#00D4AA20',
+    backgroundColor: "#00D4AA20",
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   verifiedText: {
     fontSize: 11,
-    fontFamily: 'Inter-Medium',
-    color: '#00D4AA',
+    fontFamily: "Inter-Medium",
+    color: "#00D4AA",
   },
 
   // Stats
   statsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.md,
   },
   statCard: {
@@ -582,50 +589,50 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
   statIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: `${Colors.primary}20`,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: Spacing.sm,
   },
   statValue: {
     fontSize: 20,
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     color: Colors.text,
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 11,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.textSecondary,
   },
 
   // Quick Actions
   quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
   },
   quickAction: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.xs,
   },
   quickIcon: {
     width: 52,
     height: 52,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   quickLabel: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.text,
   },
 
@@ -636,10 +643,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     color: Colors.textSecondary,
     marginBottom: Spacing.md,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
 
@@ -649,11 +656,11 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   toggleItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -665,11 +672,11 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -682,45 +689,45 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 10,
     backgroundColor: `${Colors.primary}20`,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: Spacing.md,
   },
   menuIconDestructive: {
-    backgroundColor: '#EF444420',
+    backgroundColor: "#EF444420",
   },
   menuContent: {
     flex: 1,
   },
   menuLabel: {
     fontSize: 15,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.text,
   },
   menuLabelDestructive: {
-    color: '#EF4444',
+    color: "#EF4444",
   },
   menuValue: {
     fontSize: 13,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     color: Colors.textSecondary,
     marginTop: 2,
   },
 
   // App Info
   appInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: Spacing.xl,
   },
   appVersion: {
     fontSize: 14,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.textSecondary,
     marginBottom: Spacing.xs,
   },
   appCopyright: {
     fontSize: 12,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     color: Colors.textMuted,
   },
 });

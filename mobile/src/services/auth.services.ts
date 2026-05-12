@@ -2,6 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { AUTH_TOKEN_KEY } from "../constants/auth";
+import type { ServerUserJson } from "../utils/mapServerUser";
 import { api } from "./api";
 
 export type RegisterResponse = {
@@ -60,6 +61,57 @@ export async function loginUser(body: {
 
 export async function clearStoredSession(): Promise<void> {
   await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+/** GET /api/auth/user — requires Authorization: Bearer (axios interceptor). */
+export async function fetchCurrentUser(): Promise<ServerUserJson> {
+  const { data } = await api.get<{
+    success?: boolean;
+    user?: ServerUserJson;
+  }>("/auth/user");
+
+  if (!data?.user) {
+    throw new Error("Invalid profile response");
+  }
+
+  return data.user;
+}
+
+export type VerifyEmailResponse = {
+  success?: boolean;
+  message?: string;
+  token?: string;
+};
+
+/** POST /api/auth/verify-email */
+export async function verifyEmailWithOtp(body: {
+  email: string;
+  otp: string;
+}): Promise<VerifyEmailResponse> {
+  const { data } = await api.post<VerifyEmailResponse>("/auth/verify-email", {
+    email: body.email.trim().toLowerCase(),
+    otp: String(body.otp).trim(),
+  });
+
+  if (data.token) {
+    await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
+  }
+
+  return data;
+}
+
+/** POST /api/auth/resend-verification-email */
+export async function resendVerificationEmailRequest(email: string): Promise<{
+  success?: boolean;
+  message?: string;
+}> {
+  const { data } = await api.post<{
+    success?: boolean;
+    message?: string;
+  }>("/auth/resend-verification-email", {
+    email: email.trim().toLowerCase(),
+  });
+  return data;
 }
 
 export function getAuthErrorMessage(error: unknown): string {
