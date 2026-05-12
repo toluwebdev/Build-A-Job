@@ -177,7 +177,7 @@ function ToggleItem({
 }
 
 export default function ProfileScreen() {
-  const { user, logoutAccount, refreshUser } = useApp();
+  const { user, logoutAccount, refreshUser, deleteAccount } = useApp();
 
   useFocusEffect(
     useCallback(() => {
@@ -225,8 +225,14 @@ export default function ProfileScreen() {
       },
     );
     if (!ok) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    // Handle account deletion
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const result = await deleteAccount();
+    if (!result.ok) {
+      alerts.error(result.message ?? "Could not delete your account.");
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    router.replace("/auth/login");
   };
 
   const menuSections: MenuSection[] = [

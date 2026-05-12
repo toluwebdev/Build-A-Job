@@ -12,6 +12,7 @@ import axios from "axios";
 import { AUTH_TOKEN_KEY } from "../constants/auth";
 import {
   clearStoredSession,
+  deleteAccountRequest,
   fetchCurrentUser,
   getAuthErrorMessage,
   loginUser,
@@ -117,6 +118,8 @@ export type AppContextValue = {
     email?: string;
   }>;
   logoutAccount: () => Promise<void>;
+  /** DELETE account on server, then clear local session */
+  deleteAccount: () => Promise<{ ok: boolean; message?: string }>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -238,6 +241,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    setAuthError(null);
+    try {
+      await deleteAccountRequest();
+      await clearStoredSession();
+      setUser(null);
+      return { ok: true as const };
+    } catch (e) {
+      const msg = getAuthErrorMessage(e);
+      setAuthError(msg);
+      return { ok: false as const, message: msg };
+    }
+  }, []);
+
   const value = useMemo<AppContextValue>(
     () => ({
       isReady,
@@ -251,6 +268,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       registerAccount,
       loginAccount,
       logoutAccount,
+      deleteAccount,
     }),
     [
       isReady,
@@ -262,6 +280,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       registerAccount,
       loginAccount,
       logoutAccount,
+      deleteAccount,
     ],
   );
 

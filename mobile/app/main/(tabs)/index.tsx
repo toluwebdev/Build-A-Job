@@ -350,9 +350,7 @@ export default function HomeScreen() {
                 onPress={() => toggleStep(index)}
               >
                 <View style={styles.stepHeader}>
-                  <View style={styles.stepNumber}>
-                    <Text style={styles.stepNumberText}>{index + 1}</Text>
-                  </View>
+                  
                   <View style={styles.stepIconContainer}>
                     <Icon size={20} color={Colors.primary} />
                   </View>

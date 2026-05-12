@@ -391,12 +391,20 @@ export const getUser = async (req, res) => {
 };
 export const deleteAccount = async (req, res) => {
   try {
-    const { userId } = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+      return;
+    }
     const user = await User.findByIdAndDelete(userId);
     if (!user) {
       res.status(404).json({ success: false, message: "User not found" });
       return;
     }
+    res.status(200).json({
+      success: true,
+      message: "Account deleted successfully.",
+    });
   } catch (error) {
     res.status(500).json({
       success: false,

@@ -9,6 +9,7 @@ import {
   resendVerificationEmail,
   sendResetPasswordEmail,
   getUser,
+  deleteAccount,
 } from "../controllers/authController.js";
 import authMiddleware from "../middleware/authMiddleWare.js";
 const authRoutes = express.Router();

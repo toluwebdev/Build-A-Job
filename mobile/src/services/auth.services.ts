@@ -145,6 +145,18 @@ export async function resetPasswordWithOtp(body: {
   return data;
 }
 
+/** DELETE /api/auth/delete-account — requires Bearer token */
+export async function deleteAccountRequest(): Promise<{
+  success?: boolean;
+  message?: string;
+}> {
+  const { data } = await api.delete<{
+    success?: boolean;
+    message?: string;
+  }>("/auth/delete-account");
+  return data;
+}
+
 export function getAuthErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const ax = error;
