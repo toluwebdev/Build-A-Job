@@ -14,6 +14,8 @@ app.use("/api/auth", authRoutes);
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
-connectDB().then(() => {
-  app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
-});
+connectDB();
+if (process.env.NODE_ENV !== "production") {
+  const PORT = 5000;
+  app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+}
