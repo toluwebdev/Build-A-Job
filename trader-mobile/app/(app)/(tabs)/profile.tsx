@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ShieldCheck, Star, LogOut, Sparkles } from 'lucide-react-native';
+import { ShieldCheck, Star, LogOut, Sparkles, Trash2 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 
 import { Colors, Spacing, Typography, BorderRadius } from '../../../src/constants';
 import { GlassCard } from '../../../src/components/ui/GlassCard';
@@ -11,13 +13,16 @@ import { Button } from '../../../src/components/ui/Button';
 import { mockReviews } from '../../../src/mock/data';
 import type { VerificationStatus } from '../../../src/types';
 import { usePrototype } from '../../../src/context/PrototypeContext';
+import { useApp } from '../../../src/context/AppContext';
+import { alerts } from '../../../src/services/alertService';
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
 export default function TraderProfileScreen() {
-  const { plan, profile } = usePrototype();
+  const { user, refreshUser, logoutAccount, deleteAccount } = useApp();
+  const { plan, profile, setProfile } = usePrototype();
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('PENDING');
   const [ratingAvg] = useState(4.9);
   const [ratingCount] = useState(42);
@@ -28,6 +33,58 @@ export default function TraderProfileScreen() {
     const topRated = (ratingAvg ?? 0) >= 4.8 && (ratingCount ?? 0) >= 20;
     return { score, topRated };
   }, [reputationScore, ratingAvg, ratingCount]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshUser();
+    }, [refreshUser]),
+  );
+
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      });
+    }
+  }, [user, setProfile]);
+
+  const displayFirst = user?.firstName ?? profile.firstName;
+  const displayLast = user?.lastName ?? profile.lastName;
+  const displayEmail = user?.email ?? profile.email;
+
+  const handleLogout = async () => {
+    const ok = await alerts.confirm('Are you sure you want to sign out?', {
+      title: 'Sign Out',
+      confirmText: 'Sign Out',
+      destructive: true,
+    });
+    if (!ok) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await logoutAccount();
+    router.replace('/(auth)/login');
+  };
+
+  const handleDeleteAccount = async () => {
+    const ok = await alerts.confirm(
+      'This action cannot be undone. All your data will be permanently deleted.',
+      {
+        title: 'Delete Account',
+        confirmText: 'Delete',
+        destructive: true,
+      },
+    );
+    if (!ok) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const result = await deleteAccount();
+    if (!result.ok) {
+      alerts.error(result.message ?? 'Could not delete your account.');
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    router.replace('/(auth)/login');
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -46,17 +103,22 @@ export default function TraderProfileScreen() {
               <View style={styles.profileRow}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
-                    {(profile.firstName[0] ?? 'A').toUpperCase()}
-                    {(profile.lastName[0] ?? 'T').toUpperCase()}
+                    {(displayFirst[0] ?? 'A').toUpperCase()}
+                    {(displayLast[0] ?? 'T').toUpperCase()}
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>{profile.companyName}</Text>
                   <Text style={styles.meta}>
-                    {profile.firstName} {profile.lastName} • {profile.email}
+                    {displayFirst} {displayLast} • {displayEmail}
                   </Text>
-                  <View style={{ marginTop: 8 }}>
+                  <View style={{ marginTop: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                     <PillBadge label={`Plan: ${plan}`} variant={plan === 'FREE' ? 'default' : 'primary'} />
+                    {user?.emailVerified ? (
+                      <PillBadge label="Email verified" variant="success" />
+                    ) : (
+                      <PillBadge label="Email not verified" variant="warning" />
+                    )}
                   </View>
                 </View>
               </View>
@@ -121,16 +183,30 @@ export default function TraderProfileScreen() {
         ListFooterComponent={
           <View style={{ paddingTop: Spacing.md, gap: Spacing.sm }}>
             <TouchableOpacity
-              onPress={() => Alert.alert('Portfolio', 'Portfolio + AI concepts UI is next (Phase 1).')}
+              onPress={() =>
+                alerts.info('Portfolio', 'Portfolio + AI concepts UI is next (Phase 1).')
+              }
               style={styles.inlineLink}
             >
               <Text style={styles.inlineLinkText}>Manage portfolio + AI concepts</Text>
             </TouchableOpacity>
             <Button
-              title="Back to onboarding"
-              onPress={() => router.replace('/(onboarding)')}
+              title="Subscription setup"
+              onPress={() => router.push('/(onboarding)/subscription')}
+              variant="outline"
+              icon={<Sparkles size={16} color={Colors.text} />}
+            />
+            <Button
+              title="Sign out"
+              onPress={() => void handleLogout()}
               variant="outline"
               icon={<LogOut size={16} color={Colors.text} />}
+            />
+            <Button
+              title="Delete account"
+              onPress={() => void handleDeleteAccount()}
+              variant="outline"
+              icon={<Trash2 size={16} color={Colors.error} />}
             />
           </View>
         }

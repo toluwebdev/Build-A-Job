@@ -97,5 +97,6 @@ export const Typography = {
 
 export const Validation = {
   PASSWORD_MIN_LENGTH: 8,
+  EMAIL_REGEX: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
 } as const;
 

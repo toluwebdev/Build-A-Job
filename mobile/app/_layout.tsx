@@ -24,12 +24,13 @@ function RootLayoutNav() {
     null,
   );
 
+  /** Re-read when routes change so finishing onboarding updates state (AsyncStorage was stale vs React state). */
   useEffect(() => {
     void (async () => {
       const seen = await AsyncStorage.getItem("hasSeenOnboarding");
       setHasSeenOnboarding(seen === "true");
     })();
-  }, []);
+  }, [segments]);
 
   useEffect(() => {
     if (!isReady || hasSeenOnboarding === null) return;

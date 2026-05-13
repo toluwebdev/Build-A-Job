@@ -12,18 +12,70 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Apple, Globe, Lock, Mail } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 
-import { Colors, Spacing, Typography } from "../../src/constants";
+import {
+  Colors,
+  Spacing,
+  Typography,
+  BorderRadius,
+  Validation,
+} from "../../src/constants";
 import { Button } from "../../src/components/ui/Button";
 import { Input } from "../../src/components/ui/Input";
+import { useApp } from "../../src/context/AppContext";
+import { usePrototype } from "../../src/context/PrototypeContext";
 
 export default function TraderLoginScreen() {
-  const [email, setEmail] = useState("trader@example.com");
-  const [password, setPassword] = useState("password123");
+  const { loginAccount } = useApp();
+  const { setProfile } = usePrototype();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const onSubmit = async () => {
-    // Prototype behavior: signing in takes you straight to leads.
-    router.replace("/(app)/(tabs)/leads");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSubmitError(null);
+
+    if (!email.trim() || !Validation.EMAIL_REGEX.test(email.trim())) {
+      setSubmitError("Please enter a valid email.");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    if (!password) {
+      setSubmitError("Password is required.");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await loginAccount({
+        email: email.trim(),
+        password,
+      });
+      if (!result.ok) {
+        setSubmitError(result.message ?? "Sign in failed");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+      setProfile({
+        email: result.email ?? email.trim(),
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (result.needsEmailVerification && result.email) {
+        router.replace({
+          pathname: "/(auth)/verify-email",
+          params: { email: result.email },
+        });
+        return;
+      }
+      router.replace("/(app)/(tabs)/leads");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -45,6 +97,12 @@ export default function TraderLoginScreen() {
           </View>
 
           <View style={styles.form}>
+            {submitError ? (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText}>{submitError}</Text>
+              </View>
+            ) : null}
+
             <Button
               title="Continue with Google"
               onPress={() =>
@@ -77,7 +135,10 @@ export default function TraderLoginScreen() {
             <Input
               label="Email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => {
+                setEmail(t);
+                setSubmitError(null);
+              }}
               autoCapitalize="none"
               keyboardType="email-address"
               icon={<Mail size={18} color={Colors.textMuted} />}
@@ -85,12 +146,26 @@ export default function TraderLoginScreen() {
             <Input
               label="Password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => {
+                setPassword(t);
+                setSubmitError(null);
+              }}
               secureTextEntry
               icon={<Lock size={18} color={Colors.textMuted} />}
             />
 
-            <Button title="Continue" onPress={onSubmit} />
+            <TouchableOpacity
+              onPress={() => router.push("/(auth)/forgot-password")}
+              style={styles.forgotRow}
+            >
+              <Text style={styles.forgotText}>Forgot password?</Text>
+            </TouchableOpacity>
+
+            <Button
+              title="Continue"
+              onPress={onSubmit}
+              loading={isLoading}
+            />
 
             <TouchableOpacity
               onPress={() => router.push("/(auth)/register")}
@@ -126,9 +201,25 @@ const styles = StyleSheet.create({
   },
   scrollContent: { paddingBottom: 140 },
   form: { marginTop: Spacing["3xl"], gap: Spacing.lg },
+  errorBanner: {
+    backgroundColor: `${Colors.error}20`,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  errorText: {
+    fontFamily: "Inter-Regular",
+    fontSize: Typography.sizes.sm,
+    color: Colors.error,
+  },
   dividerRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   divider: { flex: 1, height: 1, backgroundColor: Colors.border },
   dividerText: { fontFamily: "Inter-Medium", color: Colors.textMuted },
+  forgotRow: { alignSelf: "flex-end", marginTop: -Spacing.sm },
+  forgotText: {
+    fontFamily: "Inter-Medium",
+    fontSize: Typography.sizes.sm,
+    color: Colors.primary,
+  },
   linkRow: {
     flexDirection: "row",
     justifyContent: "center",

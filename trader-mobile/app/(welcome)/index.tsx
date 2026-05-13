@@ -20,9 +20,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BellRing, Sparkles, Star, ChevronRight } from 'lucide-react-native';
 
 import { Colors, Typography, Spacing, BorderRadius } from '../../src/constants';
+import { useApp } from '../../src/context/AppContext';
 
 const { width } = Dimensions.get('window');
 
@@ -112,6 +114,7 @@ function SlideItem({
 
 export default function WelcomeCarouselScreen() {
   const router = useRouter();
+  const { user } = useApp();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useSharedValue(0);
   const flatListRef = useRef<FlatList>(null);
@@ -128,7 +131,19 @@ export default function WelcomeCarouselScreen() {
 
   const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
 
-  const finish = () => {
+  const finish = async () => {
+    await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+    if (user?.emailVerified) {
+      router.replace('/(app)/(tabs)/leads');
+      return;
+    }
+    if (user && !user.emailVerified) {
+      router.replace({
+        pathname: '/(auth)/verify-email',
+        params: { email: user.email },
+      });
+      return;
+    }
     router.replace('/(auth)/login');
   };
 
