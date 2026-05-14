@@ -10,6 +10,7 @@ import {
   sendResetPasswordEmail,
   getUser,
   deleteAccount,
+  updateUser,
 } from "../controllers/authController.js";
 import authMiddleware from "../middleware/authMiddleWare.js";
 const authRoutes = express.Router();
@@ -24,4 +25,5 @@ authRoutes.post("/resend-verification-email", resendVerificationEmail);
 authRoutes.post("/send-reset-password-email", sendResetPasswordEmail);
 authRoutes.get("/user", authMiddleware, getUser);
 authRoutes.delete("/delete-account", authMiddleware, deleteAccount);
+authRoutes.put("/update-user", authMiddleware, updateUser);
 export default authRoutes;

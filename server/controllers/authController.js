@@ -392,8 +392,8 @@ export const getUser = async (req, res) => {
 export const deleteAccount = async (req, res) => {
   try {
     const userId = req.user?.id;
-    if (!userId) {
-      res.status(401).json({ success: false, message: "Unauthorized" });
+    if(!userId){
+      res.status(401).json({success: false, message: "Unauthorized user"});
       return;
     }
     const user = await User.findByIdAndDelete(userId);
@@ -414,3 +414,33 @@ export const deleteAccount = async (req, res) => {
     console.log(error.message);
   }
 };
+export const updateUser = async (req, res)=>{
+  try{
+    const userId = req.user?.id;
+    if(!userId){
+      res.status(401).json({success: false, message: "Unauthorized user"});
+      return;
+    }
+    const {firstName, lastName } = req.body;
+    if(!firstName || !lastName){
+      res.status(400).json({
+        success: false,
+        message: "First name and last name are required",
+      });
+      return;
+    }
+    const user = await User.findByIdAndUpdate(userId, {firstName, lastName}, {new: true});
+    if(!user){
+      res.status(404).json({success: false, message: "User not found"});
+      return;
+    }
+    res.status(200).json({success: true, message: "User updated successfully", user});
+  }catch(error){ 
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+    console.log(error.message);
+  }
+}

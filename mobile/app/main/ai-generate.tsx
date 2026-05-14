@@ -4,8 +4,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  ScrollView,
   Dimensions,
+  Image,
   ImageBackground,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -46,7 +46,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 
 import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants';
 import { useCreateJobStore } from '../../src/context/CreateJobContext';
@@ -204,7 +204,13 @@ function FloatingParticle({ index, isActive }: { index: number; isActive: boolea
 }
 
 // AI Generating Overlay
-function AIGeneratingOverlay({ progress }: { progress: number }) {
+function AIGeneratingOverlay({
+  progress,
+  backgroundUri,
+}: {
+  progress: number;
+  backgroundUri: string | null;
+}) {
   const [messageIndex, setMessageIndex] = useState(0);
   const pulseScale = useSharedValue(1);
 
@@ -232,8 +238,17 @@ function AIGeneratingOverlay({ progress }: { progress: number }) {
 
   return (
     <View style={styles.generatingOverlay}>
-      {/* Blurred background placeholder */}
-      <View style={styles.blurredBackground} />
+      {backgroundUri ? (
+        <ImageBackground
+          source={{ uri: backgroundUri }}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+        >
+          <View style={styles.generatingBackdropDim} />
+        </ImageBackground>
+      ) : (
+        <View style={styles.blurredBackground} />
+      )}
       
       {/* Scanning lines */}
       <ScanningLine isActive />
@@ -269,11 +284,13 @@ function AIGeneratingOverlay({ progress }: { progress: number }) {
 function DesignConceptCard({
   design,
   isActive,
+  beforePhotoUri,
   onSwipeUp,
   onSwipeDown,
 }: {
   design: (typeof designStyles)[0];
   isActive: boolean;
+  beforePhotoUri: string | null;
   onSwipeUp: () => void;
   onSwipeDown: () => void;
 }) {
@@ -282,6 +299,10 @@ function DesignConceptCard({
   const morphProgress = useSharedValue(0);
 
   const gesture = Gesture.Pan()
+    // Let the horizontal design carousel scroll: fail if user drags sideways first.
+    .failOffsetX([-24, 24])
+    // Only take over the gesture once vertical movement is intentional (morph swipe).
+    .activeOffsetY([-14, 14])
     .onUpdate((event) => {
       translateY.value = event.translationY;
     })
@@ -322,13 +343,29 @@ function DesignConceptCard({
         <View style={styles.imageContainer}>
           {/* Before image */}
           <Animated.View style={[StyleSheet.absoluteFill, beforeStyle]}>
-            <LinearGradient
-              colors={['#2A2A3E', '#1E1E32']}
-              style={styles.conceptImage}
-            >
-              <ImageIcon size={48} color={Colors.textMuted} />
-              <Text style={styles.beforeLabel}>Before</Text>
-            </LinearGradient>
+            {beforePhotoUri ? (
+              <View style={styles.conceptImage}>
+                <Image
+                  source={{ uri: beforePhotoUri }}
+                  style={StyleSheet.absoluteFill}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.45)', 'transparent', 'rgba(0,0,0,0.25)']}
+                  locations={[0, 0.45, 1]}
+                  style={StyleSheet.absoluteFill}
+                />
+                <Text style={styles.beforeLabel}>Before</Text>
+              </View>
+            ) : (
+              <LinearGradient
+                colors={['#2A2A3E', '#1E1E32']}
+                style={styles.conceptImage}
+              >
+                <ImageIcon size={48} color={Colors.textMuted} />
+                <Text style={styles.beforeLabel}>Before</Text>
+              </LinearGradient>
+            )}
           </Animated.View>
 
           {/* After image (AI generated) */}
@@ -494,6 +531,7 @@ export default function AIGenerateScreen() {
   const [showAllDesigns, setShowAllDesigns] = useState(false);
 
   const { photos, addAIDesign, selectAIDesign } = useCreateJobStore();
+  const beforePhotoUri = photos.length > 0 ? photos[photos.length - 1] : null;
 
   // Simulate AI generation with SSE-like progress
   useEffect(() => {
@@ -532,18 +570,20 @@ export default function AIGenerateScreen() {
 
   const handleSaveDesign = () => {
     const design = generatedDesigns[currentDesignIndex];
+    const originalUri = beforePhotoUri || '';
     if (design) {
+      const id = `design-${Date.now()}`;
       addAIDesign({
-        id: `design-${Date.now()}`,
-        originalPhotoUrl: photos[0] || '',
+        id,
+        originalPhotoUrl: originalUri,
         generatedDesignUrl: '',
         style: design.name,
         description: `${design.name} with ${design.material}`,
         createdAt: new Date().toISOString(),
       });
       selectAIDesign({
-        id: `design-${Date.now()}`,
-        originalPhotoUrl: photos[0] || '',
+        id,
+        originalPhotoUrl: originalUri,
         generatedDesignUrl: '',
         style: design.name,
         description: `${design.name} with ${design.material}`,
@@ -573,7 +613,7 @@ export default function AIGenerateScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar style="light" />
-        <AIGeneratingOverlay progress={progress} />
+        <AIGeneratingOverlay progress={progress} backgroundUri={beforePhotoUri} />
       </SafeAreaView>
     );
   }
@@ -611,10 +651,16 @@ export default function AIGenerateScreen() {
         <ScrollView
           horizontal
           pagingEnabled
-          showsHorizontalScrollIndicator={false}
+          showsHorizontalScrollIndicator
+          bounces={false}
+          nestedScrollEnabled
+          directionalLockEnabled
+          decelerationRate="fast"
           onScroll={(e) => {
+            const len = generatedDesigns.length;
+            if (len === 0) return;
             const index = Math.round(e.nativeEvent.contentOffset.x / width);
-            setCurrentDesignIndex(index);
+            setCurrentDesignIndex(Math.min(Math.max(index, 0), len - 1));
           }}
           scrollEventThrottle={16}
         >
@@ -623,6 +669,7 @@ export default function AIGenerateScreen() {
               <DesignConceptCard
                 design={design}
                 isActive={index === currentDesignIndex}
+                beforePhotoUri={beforePhotoUri}
                 onSwipeUp={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
                 onSwipeDown={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
               />
@@ -691,6 +738,11 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0A0A14',
     opacity: 0.95,
+  },
+  generatingBackdropDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0A0A14',
+    opacity: 0.88,
   },
   scanningLineContainer: {
     position: 'absolute',

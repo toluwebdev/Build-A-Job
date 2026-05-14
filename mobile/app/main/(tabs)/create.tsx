@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
+  Image,
   Dimensions,
   Animated,
   Alert,
@@ -217,11 +218,8 @@ function PhotoPreview({
   return (
     <View style={styles.previewContainer}>
       <View style={styles.previewImageContainer}>
-        {/* eslint-disable-next-line @typescript-eslint/no-var-requires */}
-        <View style={styles.previewPlaceholder}>
-          <ImageIcon size={64} color={Colors.textMuted} />
-          <Text style={styles.previewText}>Photo captured!</Text>
-        </View>
+        <Image source={{ uri }} style={styles.previewImage} resizeMode="contain" />
+        <Text style={styles.previewText}>Photo captured!</Text>
       </View>
 
       <View style={styles.previewActions}>
@@ -623,16 +621,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.xl,
   },
-  previewPlaceholder: {
+  previewImage: {
     width: '100%',
-    height: '60%',
+    flex: 1,
+    minHeight: height * 0.45,
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    borderStyle: 'dashed',
+    overflow: 'hidden',
   },
   previewText: {
     marginTop: Spacing.md,

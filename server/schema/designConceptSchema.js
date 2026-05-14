@@ -22,3 +22,5 @@ const designConceptSchema = mongoose.Schema({
     },
     
 })
+const DesignConcept = mongoose.model("DesignConcept", designConceptSchema)
+export default DesignConcept

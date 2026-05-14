@@ -209,15 +209,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         const res = await loginUser(input);
         const u = await loadUserFromApiOrJwt();
-        if (u && u.type !== "TRADESPERSON") {
-          await clearStoredSession();
-          setUser(null);
-          return {
-            ok: false,
-            message:
-              "This email is registered as a homeowner. Sign in with the homeowner app.",
-          };
-        }
         setUser(u);
         const emailNorm = input.email.trim().toLowerCase();
         const needsVerify =
