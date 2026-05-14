@@ -35,11 +35,10 @@ const jobSchema = mongoose.Schema(
     },
     budgetMin: {
       type: Number,
-      required: true,
     },
     budgetMax: {
       type: Number,
-      required: true,
+ 
     },
     postCode: {
       type: String,
