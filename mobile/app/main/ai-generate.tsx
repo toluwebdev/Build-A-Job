@@ -7,6 +7,7 @@ import {
   Dimensions,
   Image,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -49,13 +50,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 
 import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants';
-import { useCreateJobStore } from '../../src/context/CreateJobContext';
+import {
+  useCreateJobStore,
+  type DesignAnalysisPayload,
+} from '../../src/context/CreateJobContext';
+import { GlassCard } from '../../src/components/ui/GlassCard';
+import { analyzeDesignConceptsFromPhoto } from '../../src/services/designConcept.services';
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.9;
 const CARD_HEIGHT = height * 0.55;
 
-// Design style options
+// Design style options (first four are used in the AI studio carousel)
 const designStyles = [
   { id: 'modern', name: 'Modern Block Paving', icon: Home, color: '#7B5CF6', material: 'Porcelain · Grey · Premium' },
   { id: 'traditional', name: 'Natural Resin', icon: Palette, color: '#F59E0B', material: 'Resin · Amber · Standard' },
@@ -64,6 +70,14 @@ const designStyles = [
   { id: 'natural', name: 'Gravel Garden', icon: TreePine, color: '#10B981', material: 'Gravel · Mixed · Budget' },
   { id: 'coastal', name: 'Slate Modern', icon: Waves, color: '#3B82F6', material: 'Slate · Blue-grey · Premium' },
 ];
+
+type DesignStyleRow = (typeof designStyles)[number];
+type StudioDesign = DesignStyleRow & { afterImageUrl: string | null };
+
+function parseDesignAnalysis(raw: unknown): DesignAnalysisPayload | null {
+  if (!raw || typeof raw !== 'object') return null;
+  return raw as DesignAnalysisPayload;
+}
 
 // Scope adjusters
 const scopeAdjusters = [
@@ -288,7 +302,7 @@ function DesignConceptCard({
   onSwipeUp,
   onSwipeDown,
 }: {
-  design: (typeof designStyles)[0];
+  design: StudioDesign;
   isActive: boolean;
   beforePhotoUri: string | null;
   onSwipeUp: () => void;
@@ -370,13 +384,29 @@ function DesignConceptCard({
 
           {/* After image (AI generated) */}
           <Animated.View style={[StyleSheet.absoluteFill, afterStyle]}>
-            <LinearGradient
-              colors={[design.color + '40', design.color + '20']}
-              style={styles.conceptImage}
-            >
-              <Wand2 size={48} color={design.color} />
-              <Text style={[styles.afterLabel, { color: design.color }]}>After</Text>
-            </LinearGradient>
+            {design.afterImageUrl ? (
+              <View style={styles.conceptImage}>
+                <Image
+                  source={{ uri: design.afterImageUrl }}
+                  style={StyleSheet.absoluteFill}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.35)']}
+                  locations={[0.55, 1]}
+                  style={StyleSheet.absoluteFill}
+                />
+                <Text style={[styles.afterLabel, { color: design.color }]}>After</Text>
+              </View>
+            ) : (
+              <LinearGradient
+                colors={[design.color + '40', design.color + '20']}
+                style={styles.conceptImage}
+              >
+                <Wand2 size={48} color={design.color} />
+                <Text style={[styles.afterLabel, { color: design.color }]}>After</Text>
+              </LinearGradient>
+            )}
           </Animated.View>
 
           {/* Swipe hint */}
@@ -522,44 +552,118 @@ function DotIndicator({ total, current }: { total: number; current: number }) {
 }
 
 export default function AIGenerateScreen() {
-  const [selectedStyle, setSelectedStyle] = useState<string>('modern');
   const [isGenerating, setIsGenerating] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [generatedDesigns, setGeneratedDesigns] = useState<typeof designStyles>([]);
+  const [generatedDesigns, setGeneratedDesigns] = useState<StudioDesign[]>(() =>
+    designStyles.slice(0, 4).map((d) => ({ ...d, afterImageUrl: null })),
+  );
   const [currentDesignIndex, setCurrentDesignIndex] = useState(0);
   const [selectedAdjusters, setSelectedAdjusters] = useState<string[]>([]);
-  const [showAllDesigns, setShowAllDesigns] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [apiDisclaimer, setApiDisclaimer] = useState<string | null>(null);
+  const loadingProgressRef = useRef(true);
 
-  const { photos, addAIDesign, selectAIDesign } = useCreateJobStore();
+  const { photos, addAIDesign, selectAIDesign, setDesignAnalysis, designAnalysis } =
+    useCreateJobStore();
   const beforePhotoUri = photos.length > 0 ? photos[photos.length - 1] : null;
 
-  // Simulate AI generation with SSE-like progress
   useEffect(() => {
-    if (isGenerating) {
-      const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            completeGeneration();
-            return 100;
-          }
-          // Non-linear progress to feel more realistic
-          const increment = Math.random() * 8 + (prev > 80 ? 2 : 5);
-          return Math.min(prev + increment, 100);
+    let cancelled = false;
+    loadingProgressRef.current = true;
+    setDesignAnalysis(null);
+    setApiDisclaimer(null);
+    setIsGenerating(true);
+    setProgress(5);
+
+    const tick = setInterval(() => {
+      setProgress((p) =>
+        loadingProgressRef.current && p < 88 ? Math.min(p + 2 + Math.random() * 4, 88) : p,
+      );
+    }, 450);
+
+    (async () => {
+      let completedOk = false;
+      try {
+        if (!beforePhotoUri) {
+          Alert.alert(
+            'No photo',
+            'Take a photo of your space first, then open AI Design Studio again.',
+          );
+          if (!cancelled) router.back();
+          return;
+        }
+
+        const stylesPayload = designStyles.slice(0, 4).map((d) => ({
+          name: d.name,
+          material: d.material,
+        }));
+
+        const data = await analyzeDesignConceptsFromPhoto({
+          localPhotoUri: beforePhotoUri,
+          conceptStyles: stylesPayload,
+          includeAfterImages: true,
         });
-      }, 400);
 
-      return () => clearInterval(interval);
-    }
-  }, [isGenerating]);
+        if (cancelled) return;
 
-  const completeGeneration = () => {
-    setTimeout(() => {
-      setIsGenerating(false);
-      setGeneratedDesigns(designStyles.slice(0, 4));
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 500);
-  };
+        if (!data.success) {
+          throw new Error(typeof data.message === 'string' ? data.message : 'Analysis failed');
+        }
+
+        const merged: StudioDesign[] = designStyles.slice(0, 4).map((row, i) => {
+          const byIndex = data.concepts?.[i];
+          const byName = data.concepts?.find((x) => x.styleName === row.name);
+          const pick =
+            byIndex?.afterImageUrl != null
+              ? byIndex
+              : byName?.afterImageUrl != null
+                ? byName
+                : byIndex ?? byName;
+          return { ...row, afterImageUrl: pick?.afterImageUrl ?? null };
+        });
+
+        setGeneratedDesigns(merged);
+        setDesignAnalysis(parseDesignAnalysis(data.analysis));
+        setApiDisclaimer(typeof data.disclaimer === 'string' ? data.disclaimer : null);
+        completedOk = true;
+      } catch (e: unknown) {
+        if (cancelled) return;
+        setDesignAnalysis(null);
+        setApiDisclaimer(null);
+        const status = (e as { response?: { status?: number } })?.response?.status;
+        const message =
+          status === 401
+            ? 'Sign in to run AI design analysis on your photo.'
+            : e instanceof Error
+              ? e.message
+              : 'Could not load AI concepts.';
+        Alert.alert('AI design', message);
+        setGeneratedDesigns(
+          designStyles.slice(0, 4).map((d) => ({ ...d, afterImageUrl: null })),
+        );
+      } finally {
+        if (!cancelled) {
+          loadingProgressRef.current = false;
+          clearInterval(tick);
+          setIsGenerating(false);
+          if (beforePhotoUri) {
+            setProgress(100);
+            if (completedOk) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+          } else {
+            setProgress(0);
+          }
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      loadingProgressRef.current = false;
+      clearInterval(tick);
+    };
+  }, [beforePhotoUri, refreshKey, setDesignAnalysis]);
 
   const handleToggleAdjuster = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -576,7 +680,7 @@ export default function AIGenerateScreen() {
       addAIDesign({
         id,
         originalPhotoUrl: originalUri,
-        generatedDesignUrl: '',
+        generatedDesignUrl: design.afterImageUrl || '',
         style: design.name,
         description: `${design.name} with ${design.material}`,
         createdAt: new Date().toISOString(),
@@ -584,7 +688,7 @@ export default function AIGenerateScreen() {
       selectAIDesign({
         id,
         originalPhotoUrl: originalUri,
-        generatedDesignUrl: '',
+        generatedDesignUrl: design.afterImageUrl || '',
         style: design.name,
         description: `${design.name} with ${design.material}`,
         createdAt: new Date().toISOString(),
@@ -603,10 +707,12 @@ export default function AIGenerateScreen() {
   };
 
   const handleRegenerate = () => {
-    setGeneratedDesigns([]);
+    setGeneratedDesigns(
+      designStyles.slice(0, 4).map((d) => ({ ...d, afterImageUrl: null })),
+    );
     setCurrentDesignIndex(0);
     setProgress(0);
-    setIsGenerating(true);
+    setRefreshKey((k) => k + 1);
   };
 
   if (isGenerating) {
@@ -646,6 +752,28 @@ export default function AIGenerateScreen() {
             <Text style={styles.regenerateText}>Regenerate</Text>
           </TouchableOpacity>
         </View>
+
+        {designAnalysis?.summary ? (
+          <GlassCard style={styles.insightCard}>
+            <View style={styles.insightHeader}>
+              <Sparkles size={18} color={Colors.primary} />
+              <Text style={styles.insightTitle}>AI insight</Text>
+            </View>
+            <Text style={styles.insightSummary}>{designAnalysis.summary}</Text>
+            {designAnalysis.spaceType ? (
+              <Text style={styles.insightMeta}>Space: {designAnalysis.spaceType}</Text>
+            ) : null}
+            {Array.isArray(designAnalysis.materialsDetected) &&
+            designAnalysis.materialsDetected.length > 0 ? (
+              <Text style={styles.insightMeta} numberOfLines={2}>
+                Materials: {designAnalysis.materialsDetected.slice(0, 6).join(', ')}
+              </Text>
+            ) : null}
+            {apiDisclaimer ? (
+              <Text style={styles.insightDisclaimer}>{apiDisclaimer}</Text>
+            ) : null}
+          </GlassCard>
+        ) : null}
 
         {/* Design Cards */}
         <ScrollView
@@ -860,6 +988,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: Colors.primary,
+  },
+  insightCard: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    padding: Spacing.md,
+  },
+  insightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  insightTitle: {
+    fontSize: 15,
+    fontFamily: 'Inter-SemiBold',
+    color: Colors.text,
+  },
+  insightSummary: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: Colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: Spacing.xs,
+  },
+  insightMeta: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: Colors.textMuted,
+    marginTop: Spacing.xs,
+  },
+  insightDisclaimer: {
+    fontSize: 11,
+    fontFamily: 'Inter-Regular',
+    color: Colors.textMuted,
+    marginTop: Spacing.md,
+    lineHeight: 16,
+    fontStyle: 'italic',
   },
 
   // Card
