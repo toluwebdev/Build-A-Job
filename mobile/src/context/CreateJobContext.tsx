@@ -42,18 +42,6 @@ export type AIDesignSelection = {
   createdAt: string;
 };
 
-/** Matches structured JSON from POST /design-concepts/analyze */
-export type DesignAnalysisPayload = {
-  summary?: string;
-  spaceType?: string;
-  materialsDetected?: string[];
-  suggestedStyles?: { name: string; rationale: string }[];
-  constraintsOrRisks?: string[];
-  nextStepsForHomeowner?: string[];
-  imagePromptHint?: string;
-  parseError?: boolean;
-};
-
 type CreateJobContextValue = {
   title: string;
   setTitle: (v: string) => void;
@@ -72,8 +60,6 @@ type CreateJobContextValue = {
   selectedAIDesign: AIDesignSelection | null;
   addAIDesign: (design: AIDesignSelection) => void;
   selectAIDesign: (design: AIDesignSelection) => void;
-  designAnalysis: DesignAnalysisPayload | null;
-  setDesignAnalysis: (v: DesignAnalysisPayload | null) => void;
   reset: () => void;
 };
 
@@ -91,9 +77,6 @@ export function CreateJobProvider({ children }: { children: React.ReactNode }) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [selectedAIDesign, setSelectedAIDesign] =
     useState<AIDesignSelection | null>(null);
-  const [designAnalysis, setDesignAnalysis] = useState<DesignAnalysisPayload | null>(
-    null,
-  );
 
   const addAIDesign = useCallback((design: AIDesignSelection) => {
     setSelectedAIDesign(design);
@@ -112,7 +95,6 @@ export function CreateJobProvider({ children }: { children: React.ReactNode }) {
     setPreferredStartDate(null);
     setPhotos([]);
     setSelectedAIDesign(null);
-    setDesignAnalysis(null);
   }, []);
 
   const value = useMemo<CreateJobContextValue>(
@@ -134,8 +116,6 @@ export function CreateJobProvider({ children }: { children: React.ReactNode }) {
       selectedAIDesign,
       addAIDesign,
       selectAIDesign,
-      designAnalysis,
-      setDesignAnalysis,
       reset,
     }),
     [
@@ -149,8 +129,6 @@ export function CreateJobProvider({ children }: { children: React.ReactNode }) {
       selectedAIDesign,
       addAIDesign,
       selectAIDesign,
-      designAnalysis,
-      setDesignAnalysis,
       reset,
     ],
   );

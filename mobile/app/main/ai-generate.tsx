@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -7,10 +7,9 @@ import {
   Dimensions,
   Image,
   ImageBackground,
-  Alert,
-} from 'react-native';
-import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+} from "react-native";
+import { router } from "expo-router";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -22,8 +21,14 @@ import Animated, {
   withSequence,
   runOnJS,
   useAnimatedProps,
-} from 'react-native-reanimated';
-import { Canvas, Rect, SweepGradient, vec, Circle } from '@shopify/react-native-skia';
+} from "react-native-reanimated";
+import {
+  Canvas,
+  Rect,
+  SweepGradient,
+  vec,
+  Circle,
+} from "@shopify/react-native-skia";
 import {
   X,
   Sparkles,
@@ -43,57 +48,84 @@ import {
   Plus,
   Minus,
   PoundSterling,
-} from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
-
-import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants';
+} from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { LinearGradient } from "expo-linear-gradient";
 import {
-  useCreateJobStore,
-  type DesignAnalysisPayload,
-} from '../../src/context/CreateJobContext';
-import { GlassCard } from '../../src/components/ui/GlassCard';
-import { analyzeDesignConceptsFromPhoto } from '../../src/services/designConcept.services';
+  Gesture,
+  GestureDetector,
+  ScrollView,
+} from "react-native-gesture-handler";
 
-const { width, height } = Dimensions.get('window');
+import { Colors, Spacing, BorderRadius, Shadows } from "../../src/constants";
+import { useCreateJobStore } from "../../src/context/CreateJobContext";
+
+const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.9;
 const CARD_HEIGHT = height * 0.55;
 
-// Design style options (first four are used in the AI studio carousel)
+// Design style options
 const designStyles = [
-  { id: 'modern', name: 'Modern Block Paving', icon: Home, color: '#7B5CF6', material: 'Porcelain · Grey · Premium' },
-  { id: 'traditional', name: 'Natural Resin', icon: Palette, color: '#F59E0B', material: 'Resin · Amber · Standard' },
-  { id: 'minimalist', name: 'Natural Stone', icon: Sun, color: '#00D4AA', material: 'Sandstone · Beige · Luxury' },
-  { id: 'luxury', name: 'Cobblestone Classic', icon: Moon, color: '#EC4899', material: 'Granite · Charcoal · Premium' },
-  { id: 'natural', name: 'Gravel Garden', icon: TreePine, color: '#10B981', material: 'Gravel · Mixed · Budget' },
-  { id: 'coastal', name: 'Slate Modern', icon: Waves, color: '#3B82F6', material: 'Slate · Blue-grey · Premium' },
+  {
+    id: "modern",
+    name: "Modern Block Paving",
+    icon: Home,
+    color: "#7B5CF6",
+    material: "Porcelain · Grey · Premium",
+  },
+  {
+    id: "traditional",
+    name: "Natural Resin",
+    icon: Palette,
+    color: "#F59E0B",
+    material: "Resin · Amber · Standard",
+  },
+  {
+    id: "minimalist",
+    name: "Natural Stone",
+    icon: Sun,
+    color: "#00D4AA",
+    material: "Sandstone · Beige · Luxury",
+  },
+  {
+    id: "luxury",
+    name: "Cobblestone Classic",
+    icon: Moon,
+    color: "#EC4899",
+    material: "Granite · Charcoal · Premium",
+  },
+  {
+    id: "natural",
+    name: "Gravel Garden",
+    icon: TreePine,
+    color: "#10B981",
+    material: "Gravel · Mixed · Budget",
+  },
+  {
+    id: "coastal",
+    name: "Slate Modern",
+    icon: Waves,
+    color: "#3B82F6",
+    material: "Slate · Blue-grey · Premium",
+  },
 ];
-
-type DesignStyleRow = (typeof designStyles)[number];
-type StudioDesign = DesignStyleRow & { afterImageUrl: string | null };
-
-function parseDesignAnalysis(raw: unknown): DesignAnalysisPayload | null {
-  if (!raw || typeof raw !== 'object') return null;
-  return raw as DesignAnalysisPayload;
-}
 
 // Scope adjusters
 const scopeAdjusters = [
-  { id: 'lighting', label: 'Lighting', cost: 800 },
-  { id: 'planting', label: 'Planting', cost: 600 },
-  { id: 'drainage', label: 'Drainage', cost: 1200 },
-  { id: 'edging', label: 'Edging', cost: 450 },
+  { id: "lighting", label: "Lighting", cost: 800 },
+  { id: "planting", label: "Planting", cost: 600 },
+  { id: "drainage", label: "Drainage", cost: 1200 },
+  { id: "edging", label: "Edging", cost: 450 },
 ];
 
 // Cycling analysis messages
 const analysisMessages = [
-  'Analysing your space...',
-  'Detecting surface area...',
-  'Identifying materials...',
-  'Generating design options...',
-  'Finalising concepts...',
+  "Analysing your space...",
+  "Detecting surface area...",
+  "Identifying materials...",
+  "Generating design options...",
+  "Finalising concepts...",
 ];
 
 // Animated scanning line component using Skia
@@ -105,7 +137,7 @@ function ScanningLine({ isActive }: { isActive: boolean }) {
       translateY.value = withRepeat(
         withTiming(height + 100, { duration: 2000 }),
         -1,
-        false
+        false,
       );
     }
   }, [isActive]);
@@ -120,7 +152,7 @@ function ScanningLine({ isActive }: { isActive: boolean }) {
         <Rect x={0} y={0} width={width} height={4}>
           <SweepGradient
             c={vec(width / 2, 2)}
-            colors={['transparent', Colors.primary, '#00D4AA', 'transparent']}
+            colors={["transparent", Colors.primary, "#00D4AA", "transparent"]}
           />
         </Rect>
       </Canvas>
@@ -141,7 +173,7 @@ function CircularProgress({ progress }: { progress: number }) {
         style={[
           styles.progressRing,
           {
-            transform: [{ rotate: '-90deg' }],
+            transform: [{ rotate: "-90deg" }],
           },
         ]}
       >
@@ -161,7 +193,13 @@ function CircularProgress({ progress }: { progress: number }) {
 }
 
 // Floating particle
-function FloatingParticle({ index, isActive }: { index: number; isActive: boolean }) {
+function FloatingParticle({
+  index,
+  isActive,
+}: {
+  index: number;
+  isActive: boolean;
+}) {
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(0.6);
   const scale = useSharedValue(1);
@@ -171,36 +209,39 @@ function FloatingParticle({ index, isActive }: { index: number; isActive: boolea
       translateY.value = withRepeat(
         withSequence(
           withTiming(-30 - index * 10, { duration: 1500 + index * 200 }),
-          withTiming(0, { duration: 1500 + index * 200 })
+          withTiming(0, { duration: 1500 + index * 200 }),
         ),
         -1,
-        true
+        true,
       );
       opacity.value = withRepeat(
         withSequence(
           withTiming(1, { duration: 1000 }),
-          withTiming(0.3, { duration: 1000 })
+          withTiming(0.3, { duration: 1000 }),
         ),
         -1,
-        true
+        true,
       );
       scale.value = withRepeat(
         withSequence(
           withTiming(1.5, { duration: 1000 }),
-          withTiming(0.8, { duration: 1000 })
+          withTiming(0.8, { duration: 1000 }),
         ),
         -1,
-        true
+        true,
       );
     }
   }, [isActive, index]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
-    opacity: opacity.value,
-  }) as any);
+  const animatedStyle = useAnimatedStyle(
+    () =>
+      ({
+        transform: [{ translateY: translateY.value }, { scale: scale.value }],
+        opacity: opacity.value,
+      }) as any,
+  );
 
-  const colors = [Colors.primary, '#00D4AA', '#F59E0B', '#EC4899'];
+  const colors = [Colors.primary, "#00D4AA", "#F59E0B", "#EC4899"];
 
   return (
     <Animated.View
@@ -239,10 +280,10 @@ function AIGeneratingOverlay({
     pulseScale.value = withRepeat(
       withSequence(
         withTiming(1.1, { duration: 1000 }),
-        withTiming(1, { duration: 1000 })
+        withTiming(1, { duration: 1000 }),
       ),
       -1,
-      true
+      true,
     );
   }, []);
 
@@ -263,10 +304,10 @@ function AIGeneratingOverlay({
       ) : (
         <View style={styles.blurredBackground} />
       )}
-      
+
       {/* Scanning lines */}
       <ScanningLine isActive />
-      
+
       {/* Floating particles */}
       {[...Array(6)].map((_, i) => (
         <FloatingParticle key={i} index={i} isActive />
@@ -276,7 +317,7 @@ function AIGeneratingOverlay({
       <View style={styles.generatingContent}>
         <Animated.View style={[styles.orbContainer, pulseStyle]}>
           <LinearGradient
-            colors={[Colors.primary, '#00D4AA', '#7B5CF6']}
+            colors={[Colors.primary, "#00D4AA", "#7B5CF6"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.orb}
@@ -287,8 +328,12 @@ function AIGeneratingOverlay({
 
         <CircularProgress progress={progress} />
 
-        <Text style={styles.analysisMessage}>{analysisMessages[messageIndex]}</Text>
-        <Text style={styles.analysisSubtext}>This may take up to 30 seconds</Text>
+        <Text style={styles.analysisMessage}>
+          {analysisMessages[messageIndex]}
+        </Text>
+        <Text style={styles.analysisSubtext}>
+          This may take up to 30 seconds
+        </Text>
       </View>
     </View>
   );
@@ -302,7 +347,7 @@ function DesignConceptCard({
   onSwipeUp,
   onSwipeDown,
 }: {
-  design: StudioDesign;
+  design: (typeof designStyles)[0];
   isActive: boolean;
   beforePhotoUri: string | null;
   onSwipeUp: () => void;
@@ -365,7 +410,11 @@ function DesignConceptCard({
                   resizeMode="cover"
                 />
                 <LinearGradient
-                  colors={['rgba(0,0,0,0.45)', 'transparent', 'rgba(0,0,0,0.25)']}
+                  colors={[
+                    "rgba(0,0,0,0.45)",
+                    "transparent",
+                    "rgba(0,0,0,0.25)",
+                  ]}
                   locations={[0, 0.45, 1]}
                   style={StyleSheet.absoluteFill}
                 />
@@ -373,7 +422,7 @@ function DesignConceptCard({
               </View>
             ) : (
               <LinearGradient
-                colors={['#2A2A3E', '#1E1E32']}
+                colors={["#2A2A3E", "#1E1E32"]}
                 style={styles.conceptImage}
               >
                 <ImageIcon size={48} color={Colors.textMuted} />
@@ -384,36 +433,22 @@ function DesignConceptCard({
 
           {/* After image (AI generated) */}
           <Animated.View style={[StyleSheet.absoluteFill, afterStyle]}>
-            {design.afterImageUrl ? (
-              <View style={styles.conceptImage}>
-                <Image
-                  source={{ uri: design.afterImageUrl }}
-                  style={StyleSheet.absoluteFill}
-                  resizeMode="cover"
-                />
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.35)']}
-                  locations={[0.55, 1]}
-                  style={StyleSheet.absoluteFill}
-                />
-                <Text style={[styles.afterLabel, { color: design.color }]}>After</Text>
-              </View>
-            ) : (
-              <LinearGradient
-                colors={[design.color + '40', design.color + '20']}
-                style={styles.conceptImage}
-              >
-                <Wand2 size={48} color={design.color} />
-                <Text style={[styles.afterLabel, { color: design.color }]}>After</Text>
-              </LinearGradient>
-            )}
+            <LinearGradient
+              colors={[design.color + "40", design.color + "20"]}
+              style={styles.conceptImage}
+            >
+              <Wand2 size={48} color={design.color} />
+              <Text style={[styles.afterLabel, { color: design.color }]}>
+                After
+              </Text>
+            </LinearGradient>
           </Animated.View>
 
           {/* Swipe hint */}
           <View style={styles.swipeHint}>
             <ChevronUp size={20} color={Colors.text} />
             <Text style={styles.swipeHintText}>
-              {isMorphed ? 'Swipe down to revert' : 'Swipe up to morph'}
+              {isMorphed ? "Swipe down to revert" : "Swipe up to morph"}
             </Text>
           </View>
         </View>
@@ -504,9 +539,15 @@ function EstimateBottomSheet({
                   onPress={() => onToggleAdjuster(adjuster.id)}
                 >
                   {isSelected ? (
-                    <Minus size={14} color={isSelected ? Colors.background : Colors.text} />
+                    <Minus
+                      size={14}
+                      color={isSelected ? Colors.background : Colors.text}
+                    />
                   ) : (
-                    <Plus size={14} color={isSelected ? Colors.background : Colors.text} />
+                    <Plus
+                      size={14}
+                      color={isSelected ? Colors.background : Colors.text}
+                    />
                   )}
                   <Text
                     style={[
@@ -539,148 +580,70 @@ function DotIndicator({ total, current }: { total: number; current: number }) {
   return (
     <View style={styles.dotContainer}>
       {[...Array(total)].map((_, i) => (
-        <View
-          key={i}
-          style={[
-            styles.dot,
-            i === current && styles.dotActive,
-          ]}
-        />
+        <View key={i} style={[styles.dot, i === current && styles.dotActive]} />
       ))}
     </View>
   );
 }
 
 export default function AIGenerateScreen() {
+  const [selectedStyle, setSelectedStyle] = useState<string>("modern");
   const [isGenerating, setIsGenerating] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [generatedDesigns, setGeneratedDesigns] = useState<StudioDesign[]>(() =>
-    designStyles.slice(0, 4).map((d) => ({ ...d, afterImageUrl: null })),
+  const [generatedDesigns, setGeneratedDesigns] = useState<typeof designStyles>(
+    [],
   );
   const [currentDesignIndex, setCurrentDesignIndex] = useState(0);
   const [selectedAdjusters, setSelectedAdjusters] = useState<string[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [apiDisclaimer, setApiDisclaimer] = useState<string | null>(null);
-  const loadingProgressRef = useRef(true);
+  const [showAllDesigns, setShowAllDesigns] = useState(false);
 
-  const { photos, addAIDesign, selectAIDesign, setDesignAnalysis, designAnalysis } =
-    useCreateJobStore();
+  const { photos, addAIDesign, selectAIDesign } = useCreateJobStore();
   const beforePhotoUri = photos.length > 0 ? photos[photos.length - 1] : null;
 
+  // Simulate AI generation with SSE-like progress
   useEffect(() => {
-    let cancelled = false;
-    loadingProgressRef.current = true;
-    setDesignAnalysis(null);
-    setApiDisclaimer(null);
-    setIsGenerating(true);
-    setProgress(5);
-
-    const tick = setInterval(() => {
-      setProgress((p) =>
-        loadingProgressRef.current && p < 88 ? Math.min(p + 2 + Math.random() * 4, 88) : p,
-      );
-    }, 450);
-
-    (async () => {
-      let completedOk = false;
-      try {
-        if (!beforePhotoUri) {
-          Alert.alert(
-            'No photo',
-            'Take a photo of your space first, then open AI Design Studio again.',
-          );
-          if (!cancelled) router.back();
-          return;
-        }
-
-        const stylesPayload = designStyles.slice(0, 4).map((d) => ({
-          name: d.name,
-          material: d.material,
-        }));
-
-        const data = await analyzeDesignConceptsFromPhoto({
-          localPhotoUri: beforePhotoUri,
-          conceptStyles: stylesPayload,
-          includeAfterImages: true,
-        });
-
-        if (cancelled) return;
-
-        if (!data.success) {
-          throw new Error(typeof data.message === 'string' ? data.message : 'Analysis failed');
-        }
-
-        const merged: StudioDesign[] = designStyles.slice(0, 4).map((row, i) => {
-          const byIndex = data.concepts?.[i];
-          const byName = data.concepts?.find((x) => x.styleName === row.name);
-          const pick =
-            byIndex?.afterImageUrl != null
-              ? byIndex
-              : byName?.afterImageUrl != null
-                ? byName
-                : byIndex ?? byName;
-          return { ...row, afterImageUrl: pick?.afterImageUrl ?? null };
-        });
-
-        setGeneratedDesigns(merged);
-        setDesignAnalysis(parseDesignAnalysis(data.analysis));
-        setApiDisclaimer(typeof data.disclaimer === 'string' ? data.disclaimer : null);
-        completedOk = true;
-      } catch (e: unknown) {
-        if (cancelled) return;
-        setDesignAnalysis(null);
-        setApiDisclaimer(null);
-        const status = (e as { response?: { status?: number } })?.response?.status;
-        const message =
-          status === 401
-            ? 'Sign in to run AI design analysis on your photo.'
-            : e instanceof Error
-              ? e.message
-              : 'Could not load AI concepts.';
-        Alert.alert('AI design', message);
-        setGeneratedDesigns(
-          designStyles.slice(0, 4).map((d) => ({ ...d, afterImageUrl: null })),
-        );
-      } finally {
-        if (!cancelled) {
-          loadingProgressRef.current = false;
-          clearInterval(tick);
-          setIsGenerating(false);
-          if (beforePhotoUri) {
-            setProgress(100);
-            if (completedOk) {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            }
-          } else {
-            setProgress(0);
+    if (isGenerating) {
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            completeGeneration();
+            return 100;
           }
-        }
-      }
-    })();
+          // Non-linear progress to feel more realistic
+          const increment = Math.random() * 8 + (prev > 80 ? 2 : 5);
+          return Math.min(prev + increment, 100);
+        });
+      }, 400);
 
-    return () => {
-      cancelled = true;
-      loadingProgressRef.current = false;
-      clearInterval(tick);
-    };
-  }, [beforePhotoUri, refreshKey, setDesignAnalysis]);
+      return () => clearInterval(interval);
+    }
+  }, [isGenerating]);
+
+  const completeGeneration = () => {
+    setTimeout(() => {
+      setIsGenerating(false);
+      setGeneratedDesigns(designStyles.slice(0, 4));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, 500);
+  };
 
   const handleToggleAdjuster = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedAdjusters((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
     );
   };
 
   const handleSaveDesign = () => {
     const design = generatedDesigns[currentDesignIndex];
-    const originalUri = beforePhotoUri || '';
+    const originalUri = beforePhotoUri || "";
     if (design) {
       const id = `design-${Date.now()}`;
       addAIDesign({
         id,
         originalPhotoUrl: originalUri,
-        generatedDesignUrl: design.afterImageUrl || '',
+        generatedDesignUrl: "",
         style: design.name,
         description: `${design.name} with ${design.material}`,
         createdAt: new Date().toISOString(),
@@ -688,18 +651,18 @@ export default function AIGenerateScreen() {
       selectAIDesign({
         id,
         originalPhotoUrl: originalUri,
-        generatedDesignUrl: design.afterImageUrl || '',
+        generatedDesignUrl: "",
         style: design.name,
         description: `${design.name} with ${design.material}`,
         createdAt: new Date().toISOString(),
       });
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.push('/main/job-form');
+    router.push("/main/job-form");
   };
 
   const handleSkip = () => {
-    router.push('/main/job-form');
+    router.push("/main/job-form");
   };
 
   const handleClose = () => {
@@ -707,25 +670,26 @@ export default function AIGenerateScreen() {
   };
 
   const handleRegenerate = () => {
-    setGeneratedDesigns(
-      designStyles.slice(0, 4).map((d) => ({ ...d, afterImageUrl: null })),
-    );
+    setGeneratedDesigns([]);
     setCurrentDesignIndex(0);
     setProgress(0);
-    setRefreshKey((k) => k + 1);
+    setIsGenerating(true);
   };
 
   if (isGenerating) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <StatusBar style="light" />
-        <AIGeneratingOverlay progress={progress} backgroundUri={beforePhotoUri} />
+        <AIGeneratingOverlay
+          progress={progress}
+          backgroundUri={beforePhotoUri}
+        />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar style="light" />
 
       {/* Header */}
@@ -743,7 +707,9 @@ export default function AIGenerateScreen() {
       <View style={styles.content}>
         {/* Title */}
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{generatedDesigns.length} design concepts</Text>
+          <Text style={styles.title}>
+            {generatedDesigns.length} design concepts
+          </Text>
           <TouchableOpacity
             style={styles.regenerateButton}
             onPress={handleRegenerate}
@@ -752,28 +718,6 @@ export default function AIGenerateScreen() {
             <Text style={styles.regenerateText}>Regenerate</Text>
           </TouchableOpacity>
         </View>
-
-        {designAnalysis?.summary ? (
-          <GlassCard style={styles.insightCard}>
-            <View style={styles.insightHeader}>
-              <Sparkles size={18} color={Colors.primary} />
-              <Text style={styles.insightTitle}>AI insight</Text>
-            </View>
-            <Text style={styles.insightSummary}>{designAnalysis.summary}</Text>
-            {designAnalysis.spaceType ? (
-              <Text style={styles.insightMeta}>Space: {designAnalysis.spaceType}</Text>
-            ) : null}
-            {Array.isArray(designAnalysis.materialsDetected) &&
-            designAnalysis.materialsDetected.length > 0 ? (
-              <Text style={styles.insightMeta} numberOfLines={2}>
-                Materials: {designAnalysis.materialsDetected.slice(0, 6).join(', ')}
-              </Text>
-            ) : null}
-            {apiDisclaimer ? (
-              <Text style={styles.insightDisclaimer}>{apiDisclaimer}</Text>
-            ) : null}
-          </GlassCard>
-        ) : null}
 
         {/* Design Cards */}
         <ScrollView
@@ -798,15 +742,22 @@ export default function AIGenerateScreen() {
                 design={design}
                 isActive={index === currentDesignIndex}
                 beforePhotoUri={beforePhotoUri}
-                onSwipeUp={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-                onSwipeDown={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                onSwipeUp={() =>
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                }
+                onSwipeDown={() =>
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                }
               />
             </View>
           ))}
         </ScrollView>
 
         {/* Dot Indicator */}
-        <DotIndicator total={generatedDesigns.length} current={currentDesignIndex} />
+        <DotIndicator
+          total={generatedDesigns.length}
+          current={currentDesignIndex}
+        />
       </View>
 
       {/* Bottom Sheet */}
@@ -828,9 +779,9 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
@@ -841,17 +792,17 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     color: Colors.text,
   },
   skipText: {
     fontSize: 14,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.textSecondary,
   },
 
@@ -859,31 +810,31 @@ const styles = StyleSheet.create({
   generatingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: Colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   blurredBackground: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0A0A14',
+    backgroundColor: "#0A0A14",
     opacity: 0.95,
   },
   generatingBackdropDim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0A0A14',
+    backgroundColor: "#0A0A14",
     opacity: 0.88,
   },
   scanningLineContainer: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     height: 20,
   },
   scanningCanvas: {
-    width: '100%',
+    width: "100%",
     height: 4,
   },
   scanningGlow: {
-    position: 'absolute',
+    position: "absolute",
     top: -8,
     left: 0,
     right: 0,
@@ -892,13 +843,13 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   floatingParticle: {
-    position: 'absolute',
+    position: "absolute",
     width: 8,
     height: 8,
     borderRadius: 4,
   },
   generatingContent: {
-    alignItems: 'center',
+    alignItems: "center",
     zIndex: 10,
   },
   orbContainer: {
@@ -908,19 +859,19 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     ...Shadows.large,
   },
   progressRingContainer: {
     width: 100,
     height: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: Spacing.lg,
   },
   progressRingBackground: {
-    position: 'absolute',
+    position: "absolute",
     width: 90,
     height: 90,
     borderRadius: 45,
@@ -931,8 +882,8 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   progressRingFill: {
     width: 90,
@@ -942,20 +893,20 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   progressPercent: {
-    position: 'absolute',
+    position: "absolute",
     fontSize: 20,
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     color: Colors.text,
   },
   analysisMessage: {
     fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     color: Colors.text,
     marginBottom: Spacing.sm,
   },
   analysisSubtext: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
+    fontFamily: "Inter-Regular",
     color: Colors.textSecondary,
   },
 
@@ -964,20 +915,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
   title: {
     fontSize: 20,
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     color: Colors.text,
   },
   regenerateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.xs,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
@@ -986,45 +937,8 @@ const styles = StyleSheet.create({
   },
   regenerateText: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.primary,
-  },
-  insightCard: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-    padding: Spacing.md,
-  },
-  insightHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  insightTitle: {
-    fontSize: 15,
-    fontFamily: 'Inter-SemiBold',
-    color: Colors.text,
-  },
-  insightSummary: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: Colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: Spacing.xs,
-  },
-  insightMeta: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
-  },
-  insightDisclaimer: {
-    fontSize: 11,
-    fontFamily: 'Inter-Regular',
-    color: Colors.textMuted,
-    marginTop: Spacing.md,
-    lineHeight: 16,
-    fontStyle: 'italic',
   },
 
   // Card
@@ -1038,57 +952,57 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT,
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: Colors.border,
   },
   imageContainer: {
     flex: 1,
-    position: 'relative',
+    position: "relative",
   },
   conceptImage: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   beforeLabel: {
-    position: 'absolute',
+    position: "absolute",
     top: Spacing.md,
     left: Spacing.md,
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.textMuted,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: "rgba(0,0,0,0.5)",
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
   },
   afterLabel: {
-    position: 'absolute',
+    position: "absolute",
     top: Spacing.md,
     left: Spacing.md,
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    fontFamily: "Inter-Medium",
+    backgroundColor: "rgba(0,0,0,0.5)",
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
   },
   swipeHint: {
-    position: 'absolute',
+    position: "absolute",
     bottom: Spacing.md,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.xs,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: "rgba(0,0,0,0.6)",
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
   },
   swipeHintText: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.text,
   },
   conceptInfo: {
@@ -1097,12 +1011,12 @@ const styles = StyleSheet.create({
   },
   conceptName: {
     fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     color: Colors.text,
     marginBottom: Spacing.xs,
   },
   materialTag: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     backgroundColor: Colors.background,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
@@ -1110,14 +1024,14 @@ const styles = StyleSheet.create({
   },
   materialText: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.textSecondary,
   },
 
   // Dot Indicator
   dotContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: Spacing.sm,
     paddingVertical: Spacing.md,
   },
@@ -1143,7 +1057,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   sheetHandle: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: Spacing.sm,
   },
   handleBar: {
@@ -1158,7 +1072,7 @@ const styles = StyleSheet.create({
   },
   estimateLabel: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.textSecondary,
     marginBottom: Spacing.sm,
   },
@@ -1167,17 +1081,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderRadius: 4,
     marginBottom: Spacing.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   estimateFill: {
-    height: '100%',
-    width: '70%',
+    height: "100%",
+    width: "70%",
     backgroundColor: Colors.primary,
     borderRadius: 4,
   },
   estimateValue: {
     fontSize: 24,
-    fontFamily: 'Inter-Bold',
+    fontFamily: "Inter-Bold",
     color: Colors.text,
   },
   adjustersContainer: {
@@ -1185,18 +1099,18 @@ const styles = StyleSheet.create({
   },
   adjustersLabel: {
     fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     color: Colors.text,
     marginBottom: Spacing.sm,
   },
   adjustersList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.sm,
   },
   adjusterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.xs,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
@@ -1211,19 +1125,19 @@ const styles = StyleSheet.create({
   },
   adjusterText: {
     fontSize: 13,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
     color: Colors.text,
   },
   adjusterTextSelected: {
     color: Colors.background,
   },
   sheetActions: {
-    marginTop: 'auto',
+    marginTop: "auto",
   },
   saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.sm,
     backgroundColor: Colors.primary,
     paddingVertical: Spacing.md,
@@ -1232,7 +1146,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     color: Colors.background,
   },
 });

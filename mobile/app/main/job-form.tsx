@@ -45,7 +45,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants';
 import { useCreateJobStore, JobCategory } from '../../src/context/CreateJobContext';
-import { formatDesignAnalysisForJobDescription } from '../../src/utils/designAnalysisFormat';
 
 const { width } = Dimensions.get('window');
 
@@ -432,25 +431,8 @@ export default function JobFormScreen() {
     setPreferredStartDate,
     photos,
     selectedAIDesign,
-    designAnalysis,
     reset,
   } = useCreateJobStore();
-
-  const descriptionPrefilledRef = useRef(false);
-
-  useEffect(() => {
-    if (descriptionPrefilledRef.current) return;
-    if (description.trim().length >= 20) {
-      descriptionPrefilledRef.current = true;
-      return;
-    }
-    if (!designAnalysis) return;
-    const draft = formatDesignAnalysisForJobDescription(designAnalysis);
-    if (draft.length >= 20) {
-      setDescription(draft);
-      descriptionPrefilledRef.current = true;
-    }
-  }, [designAnalysis, description, setDescription]);
 
   // Additional form state
   const [timingPreference, setTimingPreference] = useState<string>('FLEXIBLE');

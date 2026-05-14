@@ -12,7 +12,6 @@ import {
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   X,
   Zap,
@@ -25,7 +24,6 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors, Spacing, BorderRadius, Shadows } from '../../../src/constants';
-import { AUTH_TOKEN_KEY } from '../../../src/constants/auth';
 import { useCreateJobStore } from '../../../src/context/CreateJobContext';
 
 const { width, height } = Dimensions.get('window');
@@ -296,19 +294,7 @@ export default function CreateJobScreen() {
     setPhotos(photos.slice(0, -1));
   };
 
-  const handleContinue = async () => {
-    const token = (await AsyncStorage.getItem(AUTH_TOKEN_KEY))?.trim();
-    if (!token) {
-      Alert.alert(
-        'Sign in to continue',
-        'AI design analysis uses your Build-A-Job account. Sign in, then continue.',
-        [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Sign in', onPress: () => router.push('/auth/login') },
-        ],
-      );
-      return;
-    }
+  const handleContinue = () => {
     router.push('/main/ai-generate');
   };
 
